@@ -1,8 +1,8 @@
 export const SEED_ALUMNI = [
   {
     id: 'seed-1',
-    fullName: 'Tendai Moyo',
-    email: 't.moyo@cresta.co.zw',
+    fullName: 'Farai Mutsvene',
+    email: 'farai@example.com',
     whatsapp: '+263772123456',
     program: 'Diploma in Hospitality Management',
     year: '2022',

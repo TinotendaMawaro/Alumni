@@ -1,3 +1,4 @@
+import Logo from './Logo';
 import { Menu, X, FileText, ShieldCheck, LogOut } from 'lucide-react';
 
 const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mobileMenuOpen, setMobileMenuOpen }) => {
@@ -9,13 +10,8 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
           onClick={() => onSwitchView('public')} 
           className="flex items-center gap-3 cursor-pointer group"
         >
-          <div className="w-10 h-10 md:w-11 md:h-11 bg-white rounded-xl p-1 shadow-md flex items-center justify-center border border-purple-300 group-hover:scale-105 transition-transform">
-            <svg viewBox="0 0 100 100" className="w-full h-full text-purple-800">
-              <path d="M50 5 L90 20 L90 55 C90 75 50 95 50 95 C50 95 10 75 10 55 L10 20 Z" fill="#6B21A8" stroke="#FACC15" strokeWidth="3"/>
-              <path d="M50 15 L50 85 M20 45 L80 45" stroke="#FACC15" strokeWidth="4"/>
-              <circle cx="50" cy="45" r="12" fill="#EAB308"/>
-              <path d="M50 38 L53 43 L58 44 L54 48 L55 53 L50 50 L45 53 L46 48 L42 44 L47 43 Z" fill="#3B0764"/>
-            </svg>
+          <div className="w-10 h-10 md:w-11 md:h-11 bg-white rounded-xl p-1 shadow-md flex items-center justify-center border border-purple-300 group-hover:scale-105 transition-transform overflow-hidden">
+            <Logo className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-xs md:text-sm font-black uppercase tracking-wider text-white leading-tight">

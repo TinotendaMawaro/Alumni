@@ -73,20 +73,13 @@ const EditAlumnusModal = ({ alumnus, onClose, onSave }) => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="md:col-span-2">
               <label className="block text-slate-300 font-bold mb-1">Program Studied *</label>
-              <select
+              <input
+                type="text"
                 name="program"
                 required
                 defaultValue={alumnus.program || ''}
                 className="input-field"
-              >
-                <option value="" disabled>Select program...</option>
-                <option value="Diploma in Hospitality Management">Diploma in Hospitality Management</option>
-                <option value="Diploma in Culinary Arts">Diploma in Culinary Arts</option>
-                <option value="Diploma in Tourism & Travel Management">Diploma in Tourism & Travel Management</option>
-                <option value="Diploma in Food & Beverage Operations">Diploma in Food & Beverage Operations</option>
-                <option value="Certificate in Hotel Operations">Certificate in Hotel Operations</option>
-                <option value="Bachelor Degree in Hospitality Admin">Bachelor Degree in Hospitality Admin</option>
-              </select>
+              />
             </div>
             <div>
               <label className="block text-slate-300 font-bold mb-1">Grad Year *</label>

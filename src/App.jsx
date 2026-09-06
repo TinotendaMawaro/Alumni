@@ -4,7 +4,6 @@ import { sendWelcomeEmail, sendAdminNotification, sendDeletionConfirmation } fro
 import { useAlumniData } from './hooks/useAlumniData';
 import { useAlumniFilters, useAlumniStats } from './hooks/useFilters';
 import { downloadCSV } from './utils/formatters';
-import { PROGRAMS } from './data/seedData';
 
 import SplashScreen from './components/SplashScreen';
 import Header from './components/Header';

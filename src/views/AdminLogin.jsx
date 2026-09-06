@@ -54,7 +54,7 @@ const AdminLogin = ({ onLogin }) => {
               required
               value={form.name}
               onChange={e => setForm({...form, name: e.target.value})}
-              placeholder="e.g. Dr. Sarah Sibanda"
+              placeholder="d mutsvene"
               className="input-field pl-10"
             />
           </div>

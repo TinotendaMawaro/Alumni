@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { User, Mail, Phone, GraduationCap, Calendar, Briefcase, MapPin, ChevronDown } from 'lucide-react';
-import { PROGRAMS } from '../data/seedData';
+import { User, Mail, Phone, Calendar, Briefcase, MapPin, ChevronDown } from 'lucide-react';
+import Logo from '../components/Logo';
 import { getYearOptions } from '../utils/formatters';
 
 const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplashMessage }) => {
@@ -60,13 +60,8 @@ const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplash
 
           <div className="text-center mb-8 relative z-10">
             <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-xl mb-4 border-2 border-yellow-400">
-              <div className="w-14 h-14 relative flex items-center justify-center">
-                <svg viewBox="0 0 100 100" className="w-full h-full">
-                  <path d="M50 5 L90 20 L90 55 C90 75 50 95 50 95 C50 95 10 75 10 55 L10 20 Z" fill="#6B21A8" stroke="#FACC15" strokeWidth="4"/>
-                  <path d="M50 15 L50 85 M20 45 L80 45" stroke="#FACC15" strokeWidth="4"/>
-                  <circle cx="50" cy="45" r="14" fill="#EAB308"/>
-                  <path d="M50 36 L53 42 L59 43 L55 48 L56 54 L50 51 L44 54 L45 48 L41 43 L47 42 Z" fill="#ffffff"/>
-                </svg>
+              <div className="w-14 h-14 relative flex items-center justify-center overflow-hidden">
+                <Logo className="w-full h-full object-contain" />
               </div>
             </div>
 
@@ -98,7 +93,7 @@ const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplash
                   required
                   value={form.fullName}
                   onChange={e => setForm({...form, fullName: e.target.value})}
-                  placeholder="e.g. Tendai Moyo"
+                  placeholder="e.g. Farai Mutsvene"
                   className="input-field pl-10"
                 />
               </div>
@@ -116,7 +111,7 @@ const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplash
                     required
                     value={form.email}
                     onChange={e => setForm({...form, email: e.target.value})}
-                    placeholder="tendai@example.com"
+                    placeholder="farai@example.com"
                     className="input-field pl-10"
                   />
                 </div>
@@ -146,19 +141,14 @@ const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplash
                   Program Studied <span className="text-yellow-400">*</span>
                 </label>
                 <div className="relative">
-                  <GraduationCap className="input-icon" />
-                  <select
+                  <input 
+                    type="text"
                     required
                     value={form.program}
                     onChange={e => setForm({...form, program: e.target.value})}
-                    className="input-field pl-10 appearance-none"
-                  >
-                    <option value="" disabled>Select your program...</option>
-                    {PROGRAMS.map(p => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </select>
-                  <ChevronDown className="absolute right-3.5 top-3.5 w-4 h-4 text-purple-400 pointer-events-none" />
+                    placeholder="e.g. Diploma in Hospitality Management"
+                    className="input-field"
+                  />
                 </div>
               </div>
 

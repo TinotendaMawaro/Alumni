@@ -1,4 +1,32 @@
 
+# Dependencies
+node_modules/
 
-#Ignore vscode AI rules
-.github\instructions\codacy.instructions.md
+# Build outputs
+dist/
+build/
+
+# Vite cache
+.vite/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Vercel
+.vercel

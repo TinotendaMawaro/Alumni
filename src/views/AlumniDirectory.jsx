@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Plus, Eye, Edit3, Trash2 } from 'lucide-react';
 import { getYearOptions } from '../utils/formatters';
-import { PROGRAMS } from '../data/seedData';
 
 const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -19,7 +18,7 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
         item.employment?.toLowerCase().includes(search) ||
         item.location?.toLowerCase().includes(search);
 
-      const matchesProgram = !programFilter || item.program === programFilter;
+      const matchesProgram = !programFilter || item.program?.toLowerCase().includes(programFilter.toLowerCase());
       const matchesYear = !yearFilter || item.year === yearFilter;
 
       return matchesSearch && matchesProgram && matchesYear;
@@ -54,16 +53,13 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-          <select
+          <input
+            type="text"
             value={programFilter}
             onChange={e => setProgramFilter(e.target.value)}
+            placeholder="Filter program..."
             className="input-field py-2 w-auto"
-          >
-            <option value="">All Programs</option>
-            {PROGRAMS.map(p => (
-              <option key={p} value={p}>{p.replace('Diploma in ', '').replace('Bachelor Degree in ', '')}</option>
-            ))}
-          </select>
+          />
 
           <select
             value={yearFilter}
