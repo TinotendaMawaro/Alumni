@@ -31,7 +31,7 @@ export const sendEmail = async ({ to, subject, templateParams = {} }) => {
 
   if (typeof emailjs !== 'undefined' && EMAIL_CONFIG.serviceId) {
     try {
-      await emailjs.send(EMAIL_CONFIG.serviceId, EMAIL_CONFIG.templateId, payload, EMAILS_CONFIG.publicKey);
+      await emailjs.send(EMAIL_CONFIG.serviceId, EMAIL_CONFIG.templateId, payload, EMAIL_CONFIG.publicKey);
       return { success: true };
     } catch (error) {
       console.error('EmailJS error:', error);

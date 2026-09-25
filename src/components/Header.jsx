@@ -1,7 +1,8 @@
 import Logo from './Logo';
-import { Menu, X, FileText, ShieldCheck, LogOut } from 'lucide-react';
+import { Menu, X, FileText, ShieldCheck, LogOut, Wallet } from 'lucide-react';
 
 const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mobileMenuOpen, setMobileMenuOpen }) => {
+  const paymentsView = activeView === 'payments';
   return (
     <header className="sticky top-0 z-40 bg-purple-950/95 backdrop-blur-md border-b border-purple-800/80 px-4 lg:px-8 py-3">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -34,6 +35,18 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
           >
             <FileText className="w-4 h-4" />
             <span>Public Form</span>
+          </button>
+
+          <button
+            onClick={() => onSwitchView('payments')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              paymentsView
+                ? 'bg-yellow-400 text-purple-950 shadow-md'
+                : 'text-purple-200 hover:text-white hover:bg-purple-800/40'
+            }`}
+          >
+            <Wallet className="w-4 h-4" />
+            <span>Payments</span>
           </button>
 
           <button
@@ -80,6 +93,16 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
             }`}
           >
             <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Public Registration Form</span>
+            <span className="text-[10px] opacity-75">&rarr;</span>
+          </button>
+
+          <button
+            onClick={() => { onSwitchView('payments'); setMobileMenuOpen(false); }}
+            className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-between ${
+              paymentsView ? 'bg-yellow-400 text-purple-950' : 'bg-purple-900/50 text-white'
+            }`}
+          >
+            <span className="flex items-center gap-2"><Wallet className="w-4 h-4" /> Make a Payment</span>
             <span className="text-[10px] opacity-75">&rarr;</span>
           </button>
 

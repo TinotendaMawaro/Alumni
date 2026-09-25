@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { getSupabase, getAlumniTable, isDemoMode } from '../services/supabase';
+import { getSupabase, isDemoMode } from '../services/supabase';
+import { fetchAlumni } from '../services/alumni';
 import { SEED_ALUMNI } from '../data/seedData';
 
 export const useAlumniData = () => {
@@ -13,50 +14,47 @@ export const useAlumniData = () => {
 
     let channel;
 
-    const setupRealtime = async () => {
-      if (isDemoMode) {
+    const load = async () => {
+      try {
+        const data = await fetchAlumni();
+        if (data && data.length > 0) {
+          setAlumniList(data);
+        } else {
+          setAlumniList(SEED_ALUMNI);
+        }
+      } catch (error) {
+        console.warn('Alumni load fallback:', error);
         setAlumniList(SEED_ALUMNI);
+      } finally {
         setLoading(false);
-        return;
       }
 
-      const client = getSupabase();
-      const table = getAlumniTable();
+      if (isDemoMode) return;
 
-      const { data, error } = await table.select('*').order('created_at', { ascending: false });
-      if (error) {
-        console.warn('Supabase select fallback:', error);
-        setAlumniList(SEED_ALUMNI);
-        setLoading(false);
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        setAlumniList(SEED_ALUMNI);
-      } else {
-        setAlumniList(data);
-      }
-      setLoading(false);
-
-      channel = client
-        .channel('public:alumni')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'alumni' },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              setAlumniList(prev => [payload.new, ...prev]);
-            } else if (payload.eventType === 'UPDATE') {
-              setAlumniList(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
-            } else if (payload.eventType === 'DELETE') {
-              setAlumniList(prev => prev.filter(a => a.id !== payload.old.id));
+      try {
+        const client = getSupabase();
+        channel = client
+          .channel('public:alumni')
+          .on(
+            'postgres_changes',
+            { event: '*', schema: 'public', table: 'alumni' },
+            (payload) => {
+              if (payload.eventType === 'INSERT') {
+                setAlumniList(prev => [payload.new, ...prev]);
+              } else if (payload.eventType === 'UPDATE') {
+                setAlumniList(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
+              } else if (payload.eventType === 'DELETE') {
+                setAlumniList(prev => prev.filter(a => a.id !== payload.old.id));
+              }
             }
-          }
-        )
-        .subscribe();
+          )
+          .subscribe();
+      } catch (realtimeError) {
+        console.warn('Realtime subscription fallback:', realtimeError);
+      }
     };
 
-    setupRealtime();
+    load();
 
     return () => {
       if (channel) {

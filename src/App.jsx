@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { getSupabase, getAlumniTable, isDemoMode } from './services/supabase';
-import { sendWelcomeEmail, sendAdminNotification, sendDeletionConfirmation } from './services/email';
+import React, { useState, useEffect } from 'react';
+import { isDemoMode } from './services/supabase';
+import { fetchAlumni, createAlumnus, updateAlumnus, deleteAlumnus } from './services/alumni';
 import { useAlumniData } from './hooks/useAlumniData';
 import { useAlumniFilters, useAlumniStats } from './hooks/useFilters';
 import { downloadCSV } from './utils/formatters';
@@ -15,6 +15,8 @@ import TermsModal from './components/TermsModal';
 import PublicRegistrationForm from './views/PublicRegistrationForm';
 import AdminPortal from './views/AdminPortal';
 import AdminLogin from './views/AdminLogin';
+import PaymentsView from './views/PaymentsView';
+import PaymentAdminView from './views/PaymentAdminView';
 
 export default function App() {
   const { alumniList, setAlumniList, loading } = useAlumniData();
@@ -29,6 +31,8 @@ export default function App() {
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
+  const [activeView, setActiveView] = useState('public');
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
@@ -36,7 +40,6 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const filteredAlumni = useAlumniFilters(alumniList, '', '', '');
   const stats = useAlumniStats(alumniList);
 
   const addToast = (message, type = 'info') => {
@@ -59,14 +62,14 @@ export default function App() {
     }, 800);
   };
 
-  const [activeView, setActiveView] = useState('public');
-
   const handleSwitchView = (viewName) => {
     if (viewName === activeView) return;
     setMobileMenuOpen(false);
     const msg = viewName === 'admin' 
       ? 'Loading Admin Secure Portal...' 
-      : 'Loading Public Registration Form...';
+      : viewName === 'payments'
+        ? 'Loading Payment Portal...'
+        : 'Loading Public Registration Form...';
     triggerSplashTransition(msg, viewName);
   };
 
@@ -78,25 +81,22 @@ export default function App() {
     } else if (action.type === 'submit') {
       const record = action.data;
       try {
-        if (!isDemoMode) {
-          const table = getAlumniTable();
-          const { data, error } = await table.insert([record]).select();
-          if (error) throw error;
-          if (data && data[0]) {
-            record.id = data[0].id;
-          }
-          setAlumniList(prev => [{ ...record }, ...prev]);
-          
-          sendWelcomeEmail(record);
-          sendAdminNotification(record, adminUser?.email || 'admin@sht.ac.zw');
-        } else {
-          setAlumniList(prev => [{ id: 'local-' + Date.now(), ...record }, ...prev]);
+        const saved = await createAlumnus(record);
+        setAlumniList(prev => [saved, ...prev]);
+        
+        const savedRecord = saved || record;
+        try {
+          const { sendWelcomeEmail, sendAdminNotification } = await import('./services/email.js');
+          sendWelcomeEmail(savedRecord);
+          sendAdminNotification(savedRecord, adminUser?.email || 'admin@sht.ac.zw');
+        } catch {
+          // email service optional
         }
-        addToast(`Thank you ${record.fullName}! You have successfully registered.`, 'success');
+        addToast(`Thank you ${savedRecord.fullName}! You have successfully registered.`, 'success');
       } catch (err) {
         console.error("Submission error:", err);
         setAlumniList(prev => [{ id: 'local-' + Date.now(), ...record }, ...prev]);
-        addToast('Error saving to database. Stored locally.', 'info');
+        addToast('Database unavailable. Saved locally; it will sync when the connection is restored.', 'info');
       }
     }
   };
@@ -124,8 +124,7 @@ export default function App() {
       const isRemoteId = data.id && !data.id.startsWith('seed-') && !data.id.startsWith('local-');
       
       if (isRemoteId) {
-        const table = getAlumniTable();
-        const { error } = await table.update({
+        const updated = await updateAlumnus(data.id, {
           fullName: data.fullName,
           email: data.email,
           whatsapp: data.whatsapp,
@@ -133,16 +132,11 @@ export default function App() {
           year: data.year,
           employment: data.employment || 'N/A',
           location: data.location || 'N/A'
-        }).eq('id', data.id);
-        
-        if (error) throw error;
-        setAlumniList(prev => prev.map(a => a.id === data.id ? { ...a, ...data } : a));
+        });
+        setAlumniList(prev => prev.map(a => a.id === data.id ? updated || { ...a, ...data } : a));
         addToast('Record updated in database!', 'success');
-      } else if (data.id) {
-        setAlumniList(prev => prev.map(a => a.id === data.id ? { ...a, ...data } : a));
-        addToast('Record updated successfully!', 'success');
       } else {
-        const newDoc = {
+        const saved = await createAlumnus({
           fullName: data.fullName,
           email: data.email,
           whatsapp: data.whatsapp,
@@ -152,19 +146,8 @@ export default function App() {
           location: data.location || 'N/A',
           termsAccepted: true,
           createdAt: new Date().toISOString().split('T')[0]
-        };
-        
-        if (!isDemoMode) {
-          const table = getAlumniTable();
-          const { data: inserted, error } = await table.insert([newDoc]).select();
-          if (error) throw error;
-          if (inserted && inserted[0]) {
-            newDoc.id = inserted[0].id;
-          }
-        } else {
-          newDoc.id = 'local-' + Date.now();
-        }
-        setAlumniList(prev => [newDoc, ...prev]);
+        });
+        setAlumniList(prev => [saved, ...prev]);
         addToast('New alumnus added!', 'success');
       }
       setEditingAlumnus(null);
@@ -177,16 +160,14 @@ export default function App() {
   const handleDeleteAlumnus = async (id) => {
     const alumnus = alumniList.find(a => a.id === id);
     try {
-      const isRemoteId = !id.startsWith('seed-') && !id.startsWith('local-');
-      
-      if (isRemoteId) {
-        const table = getAlumniTable();
-        const { error } = await table.delete().eq('id', id);
-        if (error) throw error;
-      } else {
-        setAlumniList(prev => prev.filter(a => a.id !== id));
+      await deleteAlumnus(id);
+      setAlumniList(prev => prev.filter(a => a.id !== id));
+      try {
+        const { sendDeletionConfirmation } = await import('./services/email.js');
+        sendDeletionConfirmation(alumnus, adminUser?.email || 'admin@sht.ac.zw');
+      } catch {
+        // email service optional
       }
-      sendDeletionConfirmation(alumnus, adminUser?.email || 'admin@sht.ac.zw');
       addToast('Alumni record deleted.', 'info');
     } catch (err) {
       console.error(err);
@@ -233,7 +214,6 @@ export default function App() {
       />
 
       <main className="flex-1 flex flex-col">
-        
         {activeView === 'public' && (
           <PublicRegistrationForm 
             onSubmit={handlePublicSubmit}
@@ -241,6 +221,10 @@ export default function App() {
             setShowSplash={setShowSplash}
             setSplashMessage={setSplashMessage}
           />
+        )}
+
+        {activeView === 'payments' && (
+          <PaymentsView addToast={addToast} />
         )}
 
         {activeView === 'admin' && (
@@ -258,7 +242,6 @@ export default function App() {
             />
           )
         )}
-
       </main>
 
       <ViewAlumnusModal 
@@ -277,6 +260,10 @@ export default function App() {
         onClose={() => setShowTermsModal(false)} 
       />
 
+      {adminUser && activeView === 'admin' && (
+        <PaymentAdminView addToast={addToast} />
+      )}
+
       <footer className="bg-purple-950 border-t border-purple-900/60 py-4 px-4 text-center text-xs text-purple-400">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
           <p>&copy; 2026 School of Hospitality and Tourism. All rights reserved.</p>
@@ -284,6 +271,8 @@ export default function App() {
             <button onClick={() => setShowTermsModal(true)} className="hover:text-yellow-400 underline">Privacy Policy</button>
             <span>&bull;</span>
             <button onClick={() => handleSwitchView('admin')} className="hover:text-yellow-400 underline">Admin Portal</button>
+            <span>&bull;</span>
+            <button onClick={() => handleSwitchView('payments')} className="hover:text-yellow-400 underline">Payments</button>
           </div>
         </div>
       </footer>
