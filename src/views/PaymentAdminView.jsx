@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Wallet, FileText, Trash2 } from 'lucide-react';
+import { Plus, Wallet, FileText, Trash2, RefreshCw } from 'lucide-react';
 import PaymentMethodCard from '../components/payments/PaymentMethodCard';
 import PaymentMethodForm from '../components/payments/PaymentMethodForm';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -13,6 +13,7 @@ import {
   updatePaymentStatus,
   deletePayment,
 } from '../services/payments';
+import { checkClickNPayOrderStatus } from '../services/clicknpay';
 
 const PaymentAdminView = ({ addToast }) => {
   const [methods, setMethods] = useState([]);
@@ -24,6 +25,7 @@ const PaymentAdminView = ({ addToast }) => {
   const [deleteMethodId, setDeleteMethodId] = useState(null);
   const [deletePaymentId, setDeletePaymentId] = useState(null);
   const [activeTab, setActiveTab] = useState('methods');
+  const [verifyingId, setVerifyingId] = useState(null);
 
   const loadMethods = async () => {
     setLoadingMethods(true);
@@ -101,6 +103,28 @@ const PaymentAdminView = ({ addToast }) => {
     } catch (error) {
       console.error(error);
       addToast('Failed to update payment status.', 'error');
+    }
+  };
+
+  const handleVerifyClickNPay = async (payment) => {
+    const ref = payment.transactionId || payment.reference;
+    if (!ref) {
+      addToast('Missing ClickNPay reference for this payment.', 'error');
+      return;
+    }
+    setVerifyingId(payment.id);
+    try {
+      const result = await checkClickNPayOrderStatus(ref);
+      const normalized = (result.status || '').toUpperCase();
+      const mappedStatus = normalized === 'SUCCESS' ? 'paid' : normalized === 'FAILED' ? 'failed' : 'pending';
+      await updatePaymentStatus(payment.id, mappedStatus, { metadata: { clicknPay: result.raw } });
+      addToast(`ClickNPay status updated to ${mappedStatus}.`, 'success');
+      await loadPayments();
+    } catch (err) {
+      console.error(err);
+      addToast('Failed to verify ClickNPay payment.', 'error');
+    } finally {
+      setVerifyingId(null);
     }
   };
 
@@ -222,6 +246,16 @@ const PaymentAdminView = ({ addToast }) => {
                             <option value="failed">Failed</option>
                             <option value="cancelled">Cancelled</option>
                           </select>
+                          {item.methodType === 'clicknpay' && (
+                            <button
+                              onClick={() => handleVerifyClickNPay(item)}
+                              disabled={verifyingId === item.id}
+                              className="p-1.5 text-slate-400 hover:text-yellow-400 hover:bg-slate-800 rounded-lg transition"
+                              title="Verify ClickNPay status"
+                            >
+                              <RefreshCw className={`w-4 h-4 ${verifyingId === item.id ? 'animate-spin' : ''}`} />
+                            </button>
+                          )}
                           <button
                             onClick={() => setDeletePaymentId(item.id)}
                             className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition"

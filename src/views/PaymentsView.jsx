@@ -50,7 +50,7 @@ const PaymentsView = ({ addToast }) => {
             No active payment methods configured. Please contact administration.
           </div>
         ) : (
-          <PaymentForm methods={activeMethods} onSubmit={handleSubmit} />
+          <PaymentForm methods={activeMethods} onSubmit={handleSubmit} addToast={addToast} />
         )}
       </div>
     </section>

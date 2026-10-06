@@ -4,6 +4,7 @@ export const PAYMENT_METHOD_TYPES = [
   { value: 'ecocash', label: 'EcoCash Mobile Money' },
   { value: 'card', label: 'Visa / Mastercard' },
   { value: 'paypal', label: 'PayPal' },
+  { value: 'clicknpay', label: 'ClickNPay Online' },
 ];
 
 export const PAYMENT_STATUSES = [
@@ -87,6 +88,19 @@ export const DEFAULT_PAYMENT_METHODS = [
     },
     isActive: true,
     sortOrder: 5,
+  },
+  {
+    id: 'default-clicknpay',
+    name: 'ClickNPay Online',
+    type: 'clicknpay',
+    description: 'Pay securely online using ClickNPay. You will be redirected to complete your payment.',
+    config: {
+      currency: 'USD',
+      merchantName: 'School of Hospitality and Tourism',
+      instructions: 'Click submit to be redirected to ClickNPay secure payment page.',
+    },
+    isActive: true,
+    sortOrder: 6,
   },
 ];
 

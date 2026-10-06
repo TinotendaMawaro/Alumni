@@ -1,4 +1,4 @@
-import { Building2, CreditCard, Wallet, Repeat } from 'lucide-react';
+import { Building2, CreditCard, Wallet, Repeat, Globe } from 'lucide-react';
 import { PAYMENT_METHOD_TYPE_LABELS } from '../../data/paymentMethods';
 
 const ICONS = {
@@ -7,6 +7,7 @@ const ICONS = {
   ecocash: Wallet,
   card: CreditCard,
   paypal: null,
+  clicknpay: Globe,
 };
 
 const PaymentMethodIcon = ({ type, className = 'w-6 h-6' }) => {

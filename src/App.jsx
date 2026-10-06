@@ -17,6 +17,7 @@ import AdminPortal from './views/AdminPortal';
 import AdminLogin from './views/AdminLogin';
 import PaymentsView from './views/PaymentsView';
 import PaymentAdminView from './views/PaymentAdminView';
+import PaymentReturnView from './views/PaymentReturnView';
 
 export default function App() {
   const { alumniList, setAlumniList, loading } = useAlumniData();
@@ -32,12 +33,29 @@ export default function App() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
 
   const [activeView, setActiveView] = useState('public');
+  const [isPaymentReturn, setIsPaymentReturn] = useState(false);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/payment-return') {
+      setIsPaymentReturn(true);
+    } else {
+      setIsPaymentReturn(false);
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSplash(false);
     }, 1200);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const safety = setTimeout(() => {
+      setShowSplash(false);
+    }, 5000);
+    return () => clearTimeout(safety);
   }, []);
 
   const stats = useAlumniStats(alumniList);
@@ -214,7 +232,9 @@ export default function App() {
       />
 
       <main className="flex-1 flex flex-col">
-        {activeView === 'public' && (
+        {isPaymentReturn && <PaymentReturnView addToast={addToast} />}
+        
+        {!isPaymentReturn && activeView === 'public' && (
           <PublicRegistrationForm 
             onSubmit={handlePublicSubmit}
             showSplash={showSplash}
@@ -223,11 +243,11 @@ export default function App() {
           />
         )}
 
-        {activeView === 'payments' && (
+        {!isPaymentReturn && activeView === 'payments' && (
           <PaymentsView addToast={addToast} />
         )}
 
-        {activeView === 'admin' && (
+        {!isPaymentReturn && activeView === 'admin' && (
           !adminUser ? (
             <AdminLogin onLogin={handleAdminLogin} />
           ) : (

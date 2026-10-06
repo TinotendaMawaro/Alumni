@@ -2,8 +2,9 @@ import { useState, useMemo } from 'react';
 import { Wallet, CreditCard, Building2, Repeat, Send } from 'lucide-react';
 import PaymentMethodIcon from './PaymentMethodIcon';
 import { PAYMENT_STATUS_LABELS } from '../../data/paymentMethods';
+import { createClickNPayOrder } from '../../services/clicknpay';
 
-const PaymentForm = ({ methods, onSubmit }) => {
+const PaymentForm = ({ methods, onSubmit, addToast }) => {
   const [selectedMethodId, setSelectedMethodId] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USD');
@@ -42,16 +43,46 @@ const PaymentForm = ({ methods, onSubmit }) => {
       status: 'pending',
     };
 
-    await onSubmit(payload);
-    setSelectedMethodId('');
-    setAmount('');
-    setCurrency('USD');
-    setAlumniName('');
-    setAlumniEmail('');
-    setAlumniWhatsapp('');
-    setReference('');
-    setMethodDetails({});
-    setSubmitting(false);
+    try {
+      if (selectedMethod.type === 'clicknpay') {
+        const clientReference = `CNP-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+        const order = await createClickNPayOrder({
+          amount: payload.amount,
+          currency: payload.currency,
+          customerEmail: payload.alumniEmail,
+          customerPhone: payload.alumniWhatsapp,
+          description: 'Alumni Registration Payment',
+          clientReference,
+        });
+
+        await onSubmit({
+          ...payload,
+          reference: clientReference,
+          transactionId: order.clientReference,
+          metadata: { ...payload.metadata, clicknpay: order.raw },
+        });
+
+        if (order.paymeUrl) {
+          window.location.href = order.paymeUrl;
+          return;
+        }
+      } else {
+        await onSubmit(payload);
+        setSelectedMethodId('');
+        setAmount('');
+        setCurrency('USD');
+        setAlumniName('');
+        setAlumniEmail('');
+        setAlumniWhatsapp('');
+        setReference('');
+        setMethodDetails({});
+      }
+    } catch (error) {
+      console.error(error);
+      addToast?.('Payment initiation failed. Please try again.', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -241,6 +272,13 @@ const PaymentForm = ({ methods, onSubmit }) => {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {selectedMethod.type === 'clicknpay' && (
+            <div className="space-y-1 text-xs text-slate-300">
+              <p className="text-yellow-300">{selectedMethod.config.instructions}</p>
+              <p><span className="text-slate-500">Merchant:</span> {selectedMethod.config.merchantName}</p>
             </div>
           )}
 
