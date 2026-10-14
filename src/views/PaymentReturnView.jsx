@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Loader2, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, RefreshCw, Home } from 'lucide-react';
 import { checkClickNPayOrderStatus } from '../services/clicknpay';
-import { updatePaymentStatus } from '../services/payments';
+import { fetchPayments, updatePaymentStatus } from '../services/payments';
 
 const PaymentReturnView = ({ addToast }) => {
   const [status, setStatus] = useState('checking');
@@ -11,7 +11,14 @@ const PaymentReturnView = ({ addToast }) => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const ref = params.get('clientReference') || params.get('client_reference') || params.get('reference');
+    let ref = params.get('clientReference') || params.get('client_reference') || params.get('reference');
+    
+    if (!ref) {
+      ref = localStorage.getItem('clicknpay_return_ref');
+      if (ref) {
+        localStorage.removeItem('clicknpay_return_ref');
+      }
+    }
     setClientReference(ref);
 
     if (!ref) {
@@ -27,29 +34,36 @@ const PaymentReturnView = ({ addToast }) => {
     try {
       const result = await checkClickNPayOrderStatus(ref);
       const normalized = (result.status || '').toUpperCase();
+
       if (normalized === 'SUCCESS') {
         setStatus('success');
         setMessage('Your payment was successful. Thank you for your contribution.');
-      } else if (normalized === 'PENDING') {
+      } else if (['PENDING', 'INITIATED'].includes(normalized)) {
         setStatus('pending');
-        setMessage('Your payment is pending. We will confirm once it is fully processed.');
+        setMessage('Your payment is being processed. We will confirm once it is completed.');
       } else if (normalized === 'FAILED') {
         setStatus('failed');
-        setMessage('Your payment failed or was declined. Please try again or contact support.');
+        setMessage('Your payment was declined or failed. Please try again or contact support.');
       } else {
         setStatus('unknown');
-        setMessage(`Payment status: ${result.status}. Please keep this page open for updates.`);
+        setMessage(`Payment status: ${result.status || 'unknown'}. Please keep this page open.`);
       }
 
       try {
-        const paymentStatus = normalized === 'SUCCESS' ? 'paid' : normalized === 'FAILED' ? 'failed' : 'pending';
-        await updatePaymentStatus(ref, paymentStatus, { metadata: { clicknPay: result.raw } });
-      } catch {
-        // best-effort status update
+        const payments = await fetchPayments();
+        const matching = payments.find(p => p.reference === ref || p.transactionId === ref);
+        if (matching) {
+          const paymentStatus = normalized === 'SUCCESS' ? 'paid' : ['PENDING', 'INITIATED'].includes(normalized) ? 'pending' : normalized === 'FAILED' ? 'failed' : 'pending';
+          await updatePaymentStatus(matching.id, paymentStatus, {
+            metadata: { ...matching.metadata, clicknPay: result.raw },
+          });
+        }
+      } catch (updateErr) {
+        console.warn('Could not update payment record status:', updateErr);
       }
     } catch (err) {
       setStatus('error');
-      setMessage('We could not verify your payment right now. Please try again later or contact support.');
+      setMessage('We could not verify your payment right now. Please try again or contact support.');
       console.error(err);
     }
   };
@@ -83,8 +97,8 @@ const PaymentReturnView = ({ addToast }) => {
           <div>
             <p className="text-sm font-bold">Payment Verification</p>
             <p className="text-xs mt-1 leading-relaxed">{message}</p>
-            {clientReference && (
-              <p className="text-[11px] mt-2 font-mono text-slate-400">
+            {clientReference && status !== 'checking' && (
+              <p className="text-[11px] mt-2 font-mono text-slate-400 break-all">
                 Reference: {clientReference}
               </p>
             )}
@@ -92,7 +106,7 @@ const PaymentReturnView = ({ addToast }) => {
         </div>
 
         {(status === 'pending' || status === 'error' || status === 'failed') && (
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
             <button
               onClick={handleRetry}
               disabled={retrying}
@@ -100,6 +114,25 @@ const PaymentReturnView = ({ addToast }) => {
             >
               <RefreshCw className={`w-4 h-4 ${retrying ? 'animate-spin' : ''}`} />
               {retrying ? 'Checking...' : 'Check Again'}
+            </button>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="btn btn-secondary flex items-center gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Home
+            </button>
+          </div>
+        )}
+
+        {status === 'success' && (
+          <div className="flex justify-center">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="btn btn-secondary flex items-center gap-2"
+            >
+              <Home className="w-4 h-4" />
+              Back to Home
             </button>
           </div>
         )}

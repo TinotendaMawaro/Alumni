@@ -1,67 +1,83 @@
-const CLICKNPAY_BASE = 'https://backendservices.clicknpay.africa:2081';
+// The ClickNPay API is called through the same-origin proxy at /api/clicknpay.
+// This avoids browser CORS errors and keeps the integration resilient.
+
 const CLICKNPAY_PUBLIC_UNIQUE_ID = import.meta.env.VITE_CLICKNPAY_PUBLIC_UNIQUE_ID || '';
-const CLICKNPAY_RETURN_URL = import.meta.env.VITE_CLICKNPAY_RETURN_URL || window.location.origin + '/payment-return';
+const CLICKNPAY_RETURN_URL =
+  import.meta.env.VITE_CLICKNPAY_RETURN_URL ||
+  (typeof window !== 'undefined' ? `${window.location.origin}/payment-return` : '');
+
+const PROXY_ENDPOINT = '/api/clicknpay';
 
 export const isClickNPayConfigured = !!CLICKNPAY_PUBLIC_UNIQUE_ID;
 
-export const createClickNPayOrder = async ({ amount, currency = 'USD', customerEmail, customerPhone, description, clientReference }) => {
-  const payload = {
-    channel: 'AUTOMATED',
-    clientReference: clientReference,
-    currency,
-    customerCharged: true,
-    customerPhoneNumber: customerPhone || '',
-    customerEmail: customerEmail || '',
-    description: description || 'Alumni Registration Payment',
-    multiplePayments: false,
-    orderYpe: 'DYNAMIC',
-    productsList: [
-      {
-        description: description || 'Alumni Registration',
-        id: 0,
-        price: Number(amount),
-        productName: 'Alumni Registration',
-        quantity: 1,
-      },
-    ],
-    publicUniqueId: CLICKNPAY_PUBLIC_UNIQUE_ID,
-    returnUrl: CLICKNPAY_RETURN_URL,
-  };
-
-  const response = await fetch(`${CLICKNPAY_BASE}/payme/orders`, {
+export const createClickNPayOrder = async ({
+  amount,
+  currency = 'USD',
+  customerEmail,
+  customerPhone,
+  description,
+  clientReference,
+}) => {
+  const response = await fetch(`${PROXY_ENDPOINT}?action=create`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    body: JSON.stringify({
+      amount: Number(amount),
+      currency,
+      customerEmail: customerEmail || '',
+      customerPhone: customerPhone || '',
+      description: description || 'Alumni Registration Payment',
+      clientReference,
+      publicUniqueId: CLICKNPAY_PUBLIC_UNIQUE_ID,
+      returnUrl: CLICKNPAY_RETURN_URL,
+    }),
   });
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`ClickNPay order failed: ${response.status} ${text}`);
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('Payment gateway returned an unexpected response');
   }
 
-  const data = await response.json();
+  if (!response.ok || data.error) {
+    throw new Error(data.error || `Payment order failed (status ${response.status})`);
+  }
+
+  if (!data.paymeUrl) {
+    throw new Error('Payment gateway did not return a payment URL');
+  }
+
   return {
-    paymeUrl: data.paymeURL || data.paymeUrl || data.payme_url,
+    paymeUrl: data.paymeUrl,
     clientReference: data.clientReference || clientReference,
-    raw: data,
+    transactionId: data.transactionId || null,
+    status: data.status || null,
+    raw: data.raw,
   };
 };
 
 export const checkClickNPayOrderStatus = async (clientReference) => {
-  const response = await fetch(`${CLICKNPAY_BASE}/payme/orders/${encodeURIComponent(clientReference)}`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const response = await fetch(
+    `${PROXY_ENDPOINT}?action=status&ref=${encodeURIComponent(clientReference)}`,
+    { method: 'GET', headers: { Accept: 'application/json' } }
+  );
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`ClickNPay status check failed: ${response.status} ${text}`);
+  let data;
+  try {
+    data = await response.json();
+  } catch {
+    throw new Error('Payment gateway returned an unexpected response');
   }
 
-  const data = await response.json();
+  if (!response.ok || data.error) {
+    throw new Error(data.error || `Status check failed (status ${response.status})`);
+  }
+
   return {
-    status: data.status || data.orderStatus || 'PENDING',
+    status: data.status || 'PENDING',
     clientReference: data.clientReference || clientReference,
-    raw: data,
+    transactionId: data.transactionId || null,
+    raw: data.raw,
   };
 };

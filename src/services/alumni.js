@@ -1,4 +1,9 @@
 import { getSupabase, getAlumniTable, isDemoMode } from './supabase';
+import {
+  alumniToDb,
+  alumniFromDb,
+  generateId,
+} from '../utils/dbMapper';
 
 const demoStorageKey = 'sht_alumni_demo';
 
@@ -11,10 +16,6 @@ const readDemoAlumni = () => {
   }
 };
 
-const writeDemoAlumni = (data) => {
-  localStorage.setItem(demoStorageKey, JSON.stringify(data));
-};
-
 export const isRemoteId = (id) => id && !id.startsWith('seed-') && !id.startsWith('local-');
 
 export const fetchAlumni = async () => {
@@ -25,46 +26,48 @@ export const fetchAlumni = async () => {
   const table = getAlumniTable();
   const { data, error } = await table.select('*').order('created_at', { ascending: false });
   if (error) {
-    if (error.code === 'PGRST205' || error.message?.includes('schema cache')) {
-      throw new Error('ALUMNI_TABLE_MISSING');
-    }
-    throw error;
+    throw new Error(error.message || 'Failed to load alumni records');
   }
-  return data || [];
+  return (data || []).map(alumniFromDb);
 };
 
 export const createAlumnus = async (record) => {
   if (isDemoMode) {
-    const id = 'local-' + Date.now();
+    const id = generateId('alum');
     const entry = { ...record, id };
-    const current = readDemoAlumni() || [];
-    writeDemoAlumni([entry, ...current]);
     return entry;
   }
 
   const table = getAlumniTable();
-  const { data, error } = await table.insert([record]).select();
+  const payload = alumniToDb(record);
+  const { data, error } = await table.insert([payload]).select();
   if (error) throw error;
-  return data?.[0] || null;
+  return data?.[0] ? alumniFromDb(data[0]) : null;
 };
 
 export const updateAlumnus = async (id, changes) => {
   if (isDemoMode) {
-    const current = readDemoAlumni() || [];
-    writeDemoAlumni(current.map(item => item.id === id ? { ...item, ...changes } : item));
     return { id, ...changes };
   }
 
   const table = getAlumniTable();
-  const { data, error } = await table.update(changes).eq('id', id).select();
+  const dbChanges = {
+    fullname: changes.fullName,
+    email: changes.email,
+    whatsapp: changes.whatsapp,
+    program: changes.program,
+    year: changes.year === null || changes.year === undefined ? '' : String(changes.year),
+    employment: changes.employment || 'N/A',
+    location: changes.location || 'N/A',
+  };
+
+  const { data, error } = await table.update(dbChanges).eq('id', id).select();
   if (error) throw error;
-  return data?.[0] || null;
+  return data?.[0] ? alumniFromDb(data[0]) : { id, ...changes };
 };
 
 export const deleteAlumnus = async (id) => {
   if (isDemoMode) {
-    const current = readDemoAlumni() || [];
-    writeDemoAlumni(current.filter(item => item.id !== id));
     return { id };
   }
 
@@ -72,43 +75,6 @@ export const deleteAlumnus = async (id) => {
   const { error } = await table.delete().eq('id', id);
   if (error) throw error;
   return { id };
-};
-
-export const syncLocalToRemote = async () => {
-  if (isDemoMode) {
-    return { synced: 0, errors: [] };
-  }
-
-  const localData = readDemoAlumni() || [];
-  const localRecords = localData.filter(r => r.id?.startsWith('local-'));
-  
-  if (localRecords.length === 0) {
-    return { synced: 0, errors: [] };
-  }
-
-  const table = getAlumniTable();
-  const results = { synced: 0, errors: [] };
-
-  for (const record of localRecords) {
-    try {
-      const { id, ...remoteRecord } = record;
-      const { data, error } = await table.insert([remoteRecord]).select();
-      if (error) throw error;
-      if (data?.[0]) {
-        results.synced++;
-      }
-    } catch (err) {
-      results.errors.push({ record: record.id, error: err.message });
-    }
-  }
-
-  if (results.synced > 0) {
-    const remaining = localData.filter(r => !r.id?.startsWith('local-') || 
-      !localRecords.some(lr => lr.id === r.id));
-    writeDemoAlumni(remaining);
-  }
-
-  return results;
 };
 
 export const checkConnection = async () => {

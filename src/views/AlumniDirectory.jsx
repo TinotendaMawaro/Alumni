@@ -6,12 +6,11 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [programFilter, setProgramFilter] = useState('');
   const [yearFilter, setYearFilter] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   const filteredAlumni = useMemo(() => {
     return alumniList.filter(item => {
       const search = searchTerm.toLowerCase();
-      const matchesSearch = 
+      const matchesSearch =
         item.fullName?.toLowerCase().includes(search) ||
         item.email?.toLowerCase().includes(search) ||
         item.whatsapp?.toLowerCase().includes(search) ||
@@ -19,31 +18,20 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
         item.location?.toLowerCase().includes(search);
 
       const matchesProgram = !programFilter || item.program?.toLowerCase().includes(programFilter.toLowerCase());
-      const matchesYear = !yearFilter || item.year === yearFilter;
+      const matchesYear = !yearFilter || String(item.year) === String(yearFilter);
 
       return matchesSearch && matchesProgram && matchesYear;
     });
   }, [alumniList, searchTerm, programFilter, yearFilter]);
 
-  const handleDeleteConfirm = (id) => {
-    setDeleteConfirm(id);
-  };
-
-  const confirmDelete = () => {
-    if (deleteConfirm) {
-      onDelete(deleteConfirm);
-      setDeleteConfirm(null);
-    }
-  };
-
   return (
     <div className="space-y-6">
-      
+
       <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row gap-3 justify-between items-center">
-        
+
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3 top-3 w-4 h-4 text-slate-500" />
-          <input 
+          <input
             type="text"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
@@ -80,6 +68,15 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
               Reset
             </button>
           )}
+
+          <button
+            onClick={onAdd}
+            className="btn btn-secondary py-2 flex items-center gap-1.5"
+            title="Add a new alumnus"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add</span>
+          </button>
         </div>
 
       </div>
@@ -134,7 +131,7 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
                     {item.employment}
                   </td>
                   <td className="px-5 py-4 text-slate-500 text-[11px]">
-                    {item.createdAt || '2026-08-10'}
+                    {item.createdAt || 'N/A'}
                   </td>
                   <td className="px-5 py-4 text-right">
                     <div className="flex items-center justify-end gap-1.5">
@@ -152,8 +149,8 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
                       >
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      <button 
-                        onClick={() => handleDeleteConfirm(item.id)}
+                      <button
+                        onClick={() => onDelete(item.id)}
                         className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition"
                         title="Delete Alumnus"
                       >
@@ -209,8 +206,8 @@ const AlumniDirectory = ({ alumniList, onDelete, onEdit, onView, onAdd }) => {
                 >
                   <Edit3 className="w-3.5 h-3.5" /> Edit
                 </button>
-                <button 
-                  onClick={() => handleDeleteConfirm(item.id)}
+                <button
+                  onClick={() => onDelete(item.id)}
                   className="px-3 py-1.5 bg-rose-950 text-rose-300 text-xs rounded-lg flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Delete

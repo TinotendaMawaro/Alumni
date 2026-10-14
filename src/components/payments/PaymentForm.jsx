@@ -1,8 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Wallet, CreditCard, Building2, Repeat, Send } from 'lucide-react';
+import { Send, Globe, ExternalLink } from 'lucide-react';
 import PaymentMethodIcon from './PaymentMethodIcon';
 import { PAYMENT_STATUS_LABELS } from '../../data/paymentMethods';
-import { createClickNPayOrder } from '../../services/clicknpay';
 
 const PaymentForm = ({ methods, onSubmit, addToast }) => {
   const [selectedMethodId, setSelectedMethodId] = useState('');
@@ -44,30 +43,9 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
     };
 
     try {
-      if (selectedMethod.type === 'clicknpay') {
-        const clientReference = `CNP-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
-        const order = await createClickNPayOrder({
-          amount: payload.amount,
-          currency: payload.currency,
-          customerEmail: payload.alumniEmail,
-          customerPhone: payload.alumniWhatsapp,
-          description: 'Alumni Registration Payment',
-          clientReference,
-        });
+      await onSubmit(payload);
 
-        await onSubmit({
-          ...payload,
-          reference: clientReference,
-          transactionId: order.clientReference,
-          metadata: { ...payload.metadata, clicknpay: order.raw },
-        });
-
-        if (order.paymeUrl) {
-          window.location.href = order.paymeUrl;
-          return;
-        }
-      } else {
-        await onSubmit(payload);
+      if (selectedMethod.type !== 'clicknpay') {
         setSelectedMethodId('');
         setAmount('');
         setCurrency('USD');
@@ -81,7 +59,9 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
       console.error(error);
       addToast?.('Payment initiation failed. Please try again.', 'error');
     } finally {
-      setSubmitting(false);
+      if (selectedMethod.type !== 'clicknpay') {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -165,7 +145,7 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
               <PaymentMethodIcon type={method.type} className="w-5 h-5 text-yellow-400" />
               <div>
                 <p className="text-xs font-bold text-white">{method.name}</p>
-                <p className="text-[11px] text-slate-400">{PAYMENT_STATUS_LABELS[method.type] || method.type}</p>
+                <p className="text-[11px] text-slate-400">{method.description}</p>
               </div>
             </button>
           ))}
@@ -175,77 +155,6 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
       {selectedMethod && (
         <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
           <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">Method Details</p>
-          {(selectedMethod.type === 'bank_account' || selectedMethod.type === 'bank_transfer') && (
-            <div className="space-y-1 text-xs text-slate-300">
-              <p><span className="text-slate-500">Bank:</span> {selectedMethod.config.bankName}</p>
-              <p><span className="text-slate-500">Account:</span> {selectedMethod.config.accountName}</p>
-              <p><span className="text-slate-500">Number:</span> {selectedMethod.config.accountNumber}</p>
-              <p><span className="text-slate-500">Branch:</span> {selectedMethod.config.branch}</p>
-              {selectedMethod.config.swiftCode && (
-                <p><span className="text-slate-500">SWIFT:</span> {selectedMethod.config.swiftCode}</p>
-              )}
-              {selectedMethod.config.referenceInstructions && (
-                <p className="text-yellow-300">{selectedMethod.config.referenceInstructions}</p>
-              )}
-            </div>
-          )}
-
-          {selectedMethod.type === 'ecocash' && (
-            <div className="space-y-1 text-xs text-slate-300">
-              <p><span className="text-slate-500">Merchant:</span> {selectedMethod.config.merchantName}</p>
-              <p><span className="text-slate-500">Code:</span> {selectedMethod.config.merchantCode}</p>
-              <p><span className="text-slate-500">Shortcode:</span> {selectedMethod.config.shortcode}</p>
-            </div>
-          )}
-
-          {selectedMethod.type === 'card' && (
-            <div className="space-y-2">
-              <p className="text-xs text-slate-300">{selectedMethod.config.instructions}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Cardholder Name</label>
-                  <input
-                    type="text"
-                    value={methodDetails.cardName || ''}
-                    onChange={e => updateDetails('cardName', e.target.value)}
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Last 4 Digits</label>
-                  <input
-                    type="text"
-                    maxLength={4}
-                    value={methodDetails.cardLast4 || ''}
-                    onChange={e => updateDetails('cardLast4', e.target.value.replace(/\D/g, ''))}
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Expiry</label>
-                  <input
-                    type="text"
-                    placeholder="MM/YY"
-                    value={methodDetails.cardExpiry || ''}
-                    onChange={e => updateDetails('cardExpiry', e.target.value)}
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Brand</label>
-                  <select
-                    value={methodDetails.cardBrand || ''}
-                    onChange={e => updateDetails('cardBrand', e.target.value)}
-                    className="input-field"
-                  >
-                    <option value="">Select</option>
-                    <option value="visa">Visa</option>
-                    <option value="mastercard">Mastercard</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
 
           {selectedMethod.type === 'paypal' && (
             <div className="space-y-2">
@@ -283,12 +192,12 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
           )}
 
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Payment Reference</label>
+            <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Payment Reference (optional)</label>
             <input
               type="text"
               value={reference}
               onChange={e => setReference(e.target.value)}
-              placeholder="e.g. Teller / Ecocash / Card ref"
+              placeholder="e.g. Registration fee"
               className="input-field"
             />
           </div>
@@ -298,10 +207,27 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
       <button
         type="submit"
         disabled={!selectedMethod || !amount || Number(amount) <= 0 || submitting}
-        className="w-full py-3.5 bg-yellow-400 hover:bg-yellow-300 text-purple-950 font-black rounded-xl transition disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full py-3.5 bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-purple-950 font-black rounded-xl transition flex items-center justify-center gap-2 tracking-wider"
       >
-        <Send className="w-4 h-4" />
-        {submitting ? 'Processing...' : 'Submit Payment'}
+        {submitting ? (
+          <>
+            <div className="w-4 h-4 border-2 border-purple-950 border-t-transparent rounded-full animate-spin" />
+            <span>
+              {selectedMethod?.type === 'clicknpay' ? 'Redirecting to ClickNPay...' : 'Processing...'}
+            </span>
+          </>
+        ) : (
+          <>
+            {selectedMethod?.type === 'clicknpay' ? (
+              <ExternalLink className="w-4 h-4" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            <span>
+              {selectedMethod?.type === 'clicknpay' ? 'Pay with ClickNPay' : 'Submit Payment'}
+            </span>
+          </>
+        )}
       </button>
     </form>
   );

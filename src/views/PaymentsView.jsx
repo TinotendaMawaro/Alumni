@@ -1,19 +1,68 @@
 import { useState } from 'react';
-import { Wallet, Send } from 'lucide-react';
+import { Wallet, Lock } from 'lucide-react';
 import PaymentForm from '../components/payments/PaymentForm';
 import { usePaymentMethods } from '../hooks/usePayments';
-import { createPayment } from '../services/payments';
+import { createPayment, updatePaymentStatus } from '../services/payments';
+import { createClickNPayOrder } from '../services/clicknpay';
 
 const PaymentsView = ({ addToast }) => {
   const { methods, loading } = usePaymentMethods();
 
   const handleSubmit = async (payload) => {
     try {
-      await createPayment(payload);
-      addToast('Payment request submitted successfully. We will contact you to confirm.', 'success');
+      if (payload.methodType === 'clicknpay') {
+        const clientReference = `CNP-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+        // 1. Create the ClickNPay order first so we have a real reference.
+        const order = await createClickNPayOrder({
+          amount: payload.amount,
+          currency: payload.currency,
+          customerEmail: payload.alumniEmail,
+          customerPhone: payload.alumniWhatsapp,
+          description: `Alumni Registration - ${payload.alumniName}`,
+          clientReference,
+        });
+
+        if (!order.paymeUrl) {
+          throw new Error('Payment gateway did not return a payment URL');
+        }
+
+        // 2. Persist the pending payment against the database.
+        const savedPayment = await createPayment({
+          ...payload,
+          reference: order.clientReference,
+          transactionId: order.transactionId || order.clientReference,
+          status: 'pending',
+          metadata: {
+            clicknpay: order.raw,
+            paymeUrl: order.paymeUrl,
+          },
+        });
+
+        // 3. Remember the reference in case the return URL omits it.
+        localStorage.setItem('clicknpay_return_ref', order.clientReference);
+
+        // 4. Ensure the row is linked to the gateway order.
+        if (savedPayment?.id) {
+          await updatePaymentStatus(savedPayment.id, 'pending', {
+            transactionId: order.transactionId || order.clientReference,
+            reference: order.clientReference,
+            metadata: {
+              clicknpay: order.raw,
+              paymeUrl: order.paymeUrl,
+            },
+          });
+        }
+
+        // 5. Redirect to ClickNPay in the same tab.
+        window.location.href = order.paymeUrl;
+      } else {
+        await createPayment(payload);
+        addToast('Payment request submitted successfully. We will contact you to confirm.', 'success');
+      }
     } catch (error) {
       console.error(error);
-      addToast('Payment submission failed. Please try again.', 'error');
+      addToast(error?.message || 'Payment could not be started. Please try again.', 'error');
     }
   };
 
@@ -40,8 +89,13 @@ const PaymentsView = ({ addToast }) => {
             Make a Payment
           </h2>
           <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-            Choose a payment method below and submit your payment request. Our team will confirm receipt shortly.
+            Complete your payment securely through ClickNPay. You will be redirected to the payment gateway.
           </p>
+        </div>
+
+        <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400">
+          <Lock className="w-3 h-3" />
+          <span>Your information is protected by industry-standard encryption</span>
         </div>
 
         {activeMethods.length === 0 ? (

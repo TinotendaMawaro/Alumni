@@ -7,6 +7,7 @@ import { downloadCSV } from './utils/formatters';
 
 import SplashScreen from './components/SplashScreen';
 import Header from './components/Header';
+import AnimatedBackground from './components/AnimatedBackground';
 import ToastContainer from './components/ToastContainer';
 import ConfirmDialog from './components/ConfirmDialog';
 import ViewAlumnusModal from './components/ViewAlumnusModal';
@@ -113,8 +114,8 @@ export default function App() {
         addToast(`Thank you ${savedRecord.fullName}! You have successfully registered.`, 'success');
       } catch (err) {
         console.error("Submission error:", err);
-        setAlumniList(prev => [{ id: 'local-' + Date.now(), ...record }, ...prev]);
-        addToast('Database unavailable. Saved locally; it will sync when the connection is restored.', 'info');
+        const detail = err?.message ? ` (${err.message})` : '';
+        addToast(`Could not save your registration. Please try again.${detail}`, 'error');
       }
     }
   };
@@ -139,10 +140,13 @@ export default function App() {
 
   const handleSaveAlumnus = async (data) => {
     try {
-      const isRemoteId = data.id && !data.id.startsWith('seed-') && !data.id.startsWith('local-');
-      
-      if (isRemoteId) {
-        const updated = await updateAlumnus(data.id, {
+      // An id that already exists in the database means this is an update.
+      const existingId = data.id && !data.id.startsWith('local-') && !data.id.startsWith('seed-')
+        ? data.id
+        : null;
+
+      if (existingId) {
+        const updated = await updateAlumnus(existingId, {
           fullName: data.fullName,
           email: data.email,
           whatsapp: data.whatsapp,
@@ -151,7 +155,7 @@ export default function App() {
           employment: data.employment || 'N/A',
           location: data.location || 'N/A'
         });
-        setAlumniList(prev => prev.map(a => a.id === data.id ? updated || { ...a, ...data } : a));
+        setAlumniList(prev => prev.map(a => a.id === existingId ? (updated || { ...a, ...data }) : a));
         addToast('Record updated in database!', 'success');
       } else {
         const saved = await createAlumnus({
@@ -165,13 +169,14 @@ export default function App() {
           termsAccepted: true,
           createdAt: new Date().toISOString().split('T')[0]
         });
-        setAlumniList(prev => [saved, ...prev]);
+        setAlumniList(prev => [saved, ...prev.filter(a => a.id !== saved?.id)]);
         addToast('New alumnus added!', 'success');
       }
       setEditingAlumnus(null);
     } catch (e) {
       console.error(e);
-      addToast('Saved locally.', 'info');
+      const detail = e?.message ? ` (${e.message})` : '';
+      addToast(`Failed to save record.${detail}`, 'error');
     }
   };
 
@@ -189,6 +194,8 @@ export default function App() {
       addToast('Alumni record deleted.', 'info');
     } catch (err) {
       console.error(err);
+      const detail = err?.message ? ` (${err.message})` : '';
+      addToast(`Failed to delete record.${detail}`, 'error');
     }
     setDeleteConfirmId(null);
   };
@@ -210,6 +217,7 @@ export default function App() {
     <div className="min-h-screen bg-purple-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-yellow-400 selection:text-purple-950">
       
       {showSplash && <SplashScreen message={splashMessage} />}
+      <AnimatedBackground />
       <ToastContainer toasts={toasts} />
 
       <ConfirmDialog 
@@ -251,12 +259,13 @@ export default function App() {
           !adminUser ? (
             <AdminLogin onLogin={handleAdminLogin} />
           ) : (
-            <AdminPortal 
+            <AdminPortal
               adminUser={adminUser}
               alumniList={alumniList}
               onLogout={handleAdminLogout}
-              onDeleteAlumnus={handleDeleteAlumnus}
+              onDeleteAlumnus={(id) => setDeleteConfirmId(id)}
               onEditAlumnus={(a) => setEditingAlumnus(a)}
+              onAddAlumnus={() => setEditingAlumnus({})}
               onViewAlumnus={(a) => setViewingAlumnus(a)}
               onExportCSV={handleExportCSV}
             />

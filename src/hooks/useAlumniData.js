@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { getSupabase, isDemoMode } from '../services/supabase';
 import { fetchAlumni } from '../services/alumni';
-import { SEED_ALUMNI } from '../data/seedData';
+import { alumniFromDb } from '../utils/dbMapper';
 
 export const useAlumniData = () => {
   const [alumniList, setAlumniList] = useState([]);
@@ -17,14 +17,10 @@ export const useAlumniData = () => {
     const load = async () => {
       try {
         const data = await fetchAlumni();
-        if (data && data.length > 0) {
-          setAlumniList(data);
-        } else {
-          setAlumniList(SEED_ALUMNI);
-        }
+        setAlumniList(Array.isArray(data) ? data : []);
       } catch (error) {
-        console.warn('Alumni load fallback:', error);
-        setAlumniList(SEED_ALUMNI);
+        console.error('Failed to load alumni records:', error);
+        setAlumniList([]);
       } finally {
         setLoading(false);
       }
@@ -40,9 +36,9 @@ export const useAlumniData = () => {
             { event: '*', schema: 'public', table: 'alumni' },
             (payload) => {
               if (payload.eventType === 'INSERT') {
-                setAlumniList(prev => [payload.new, ...prev]);
+                setAlumniList(prev => [alumniFromDb(payload.new), ...prev]);
               } else if (payload.eventType === 'UPDATE') {
-                setAlumniList(prev => prev.map(a => a.id === payload.new.id ? payload.new : a));
+                setAlumniList(prev => prev.map(a => a.id === payload.new.id ? alumniFromDb(payload.new) : a));
               } else if (payload.eventType === 'DELETE') {
                 setAlumniList(prev => prev.filter(a => a.id !== payload.old.id));
               }
@@ -50,7 +46,7 @@ export const useAlumniData = () => {
           )
           .subscribe();
       } catch (realtimeError) {
-        console.warn('Realtime subscription fallback:', realtimeError);
+        console.warn('Realtime subscription unavailable:', realtimeError);
       }
     };
 

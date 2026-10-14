@@ -116,8 +116,8 @@ const PaymentAdminView = ({ addToast }) => {
     try {
       const result = await checkClickNPayOrderStatus(ref);
       const normalized = (result.status || '').toUpperCase();
-      const mappedStatus = normalized === 'SUCCESS' ? 'paid' : normalized === 'FAILED' ? 'failed' : 'pending';
-      await updatePaymentStatus(payment.id, mappedStatus, { metadata: { clicknPay: result.raw } });
+      const mappedStatus = normalized === 'SUCCESS' ? 'paid' : (normalized === 'FAILED' || normalized === 'ERROR') ? 'failed' : 'pending';
+      await updatePaymentStatus(payment.id, mappedStatus, { metadata: { ...payment.metadata, clicknPay: result.raw } });
       addToast(`ClickNPay status updated to ${mappedStatus}.`, 'success');
       await loadPayments();
     } catch (err) {

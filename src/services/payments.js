@@ -1,88 +1,50 @@
 import { getSupabase, isDemoMode } from './supabase';
-import { DEFAULT_PAYMENT_METHODS } from '../data/paymentMethods';
-
-const METHODS_STORAGE_KEY = 'sht_payment_methods';
-const PAYMENTS_STORAGE_KEY = 'sht_payments';
-
-const readDemoMethods = () => {
-  try {
-    const raw = localStorage.getItem(METHODS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : DEFAULT_PAYMENT_METHODS;
-  } catch {
-    return DEFAULT_PAYMENT_METHODS;
-  }
-};
-
-const writeDemoMethods = (data) => {
-  localStorage.setItem(METHODS_STORAGE_KEY, JSON.stringify(data));
-};
-
-const readDemoPayments = () => {
-  try {
-    const raw = localStorage.getItem(PAYMENTS_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-};
-
-const writeDemoPayments = (data) => {
-  localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(data));
-};
-
-const nowIso = () => new Date().toISOString();
+import {
+  paymentToDb,
+  paymentFromDb,
+  paymentMethodToDb,
+  paymentMethodFromDb,
+  generateId,
+} from '../utils/dbMapper';
 
 export const fetchPaymentMethods = async ({ includeInactive = false } = {}) => {
   if (isDemoMode) {
-    const data = readDemoMethods();
-    return includeInactive ? data : data.filter(m => m.isActive);
+    return [];
   }
 
   const client = getSupabase();
-  let query = client.from('payment_methods').select('*').order('sortOrder', { ascending: true });
+  let query = client.from('payment_methods').select('*').order('sort_order', { ascending: true });
   if (!includeInactive) {
-    query = query.eq('isActive', true);
+    query = query.eq('is_active', true);
   }
   const { data, error } = await query;
   if (error) {
-    console.warn('Payment methods fetch fallback:', error);
-    return includeInactive ? DEFAULT_PAYMENT_METHODS : DEFAULT_PAYMENT_METHODS.filter(m => m.isActive);
+    throw new Error(error.message || 'Failed to load payment methods');
   }
-  return data && data.length > 0 ? data : (includeInactive ? DEFAULT_PAYMENT_METHODS : DEFAULT_PAYMENT_METHODS.filter(m => m.isActive));
+  return (data || []).map(paymentMethodFromDb);
 };
 
 export const createPaymentMethod = async (method) => {
-  const payload = {
-    name: method.name,
-    type: method.type,
-    description: method.description || '',
-    config: method.config || {},
-    isActive: method.isActive ?? true,
-    sortOrder: method.sortOrder ?? 0,
-    updatedAt: nowIso(),
-  };
+  const payload = paymentMethodToDb(method);
 
-  if (isDemoMode) {
-    const entry = { id: 'local-' + Date.now(), ...payload };
-    const current = readDemoMethods();
-    writeDemoMethods([...current, entry]);
-    return entry;
-  }
+  if (isDemoMode) return { ...method, id: payload.id };
 
   const client = getSupabase();
   const { data, error } = await client.from('payment_methods').insert([payload]).select();
   if (error) throw error;
-  return data?.[0] || null;
+  return data?.[0] ? paymentMethodFromDb(data[0]) : null;
 };
 
 export const updatePaymentMethod = async (id, changes) => {
-  const payload = { ...changes, updatedAt: nowIso() };
+  const payload = {};
+  if (changes.name !== undefined) payload.name = changes.name;
+  if (changes.type !== undefined) payload.type = changes.type;
+  if (changes.description !== undefined) payload.description = changes.description;
+  if (changes.config !== undefined) payload.config = changes.config;
+  if (changes.isActive !== undefined) payload.is_active = changes.isActive;
+  if (changes.sortOrder !== undefined) payload.sort_order = changes.sortOrder;
 
-  if (isDemoMode) {
-    const current = readDemoMethods();
-    writeDemoMethods(current.map(item => item.id === id ? { ...item, ...payload } : item));
-    return { id, ...payload };
-  }
+  if (isDemoMode) return { id, ...changes };
 
   const client = getSupabase();
   const { data, error } = await client
@@ -91,15 +53,11 @@ export const updatePaymentMethod = async (id, changes) => {
     .eq('id', id)
     .select();
   if (error) throw error;
-  return data?.[0] || null;
+  return data?.[0] ? paymentMethodFromDb(data[0]) : null;
 };
 
 export const deletePaymentMethod = async (id) => {
-  if (isDemoMode) {
-    const current = readDemoMethods();
-    writeDemoMethods(current.filter(item => item.id !== id));
-    return { id };
-  }
+  if (isDemoMode) return { id };
 
   const client = getSupabase();
   const { error } = await client.from('payment_methods').delete().eq('id', id);
@@ -108,72 +66,45 @@ export const deletePaymentMethod = async (id) => {
 };
 
 export const fetchPayments = async () => {
-  if (isDemoMode) {
-    return readDemoPayments();
-  }
+  if (isDemoMode) return [];
 
   const client = getSupabase();
-  const { data, error } = await client.from('payments').select('*').order('createdAt', { ascending: false });
+  const { data, error } = await client
+    .from('payments')
+    .select('*')
+    .order('created_at', { ascending: false });
   if (error) {
-    console.warn('Payments fetch fallback:', error);
-    return [];
+    throw new Error(error.message || 'Failed to load payments');
   }
-  return data || [];
+  return (data || []).map(paymentFromDb);
 };
 
 export const createPayment = async (payment) => {
-  const payload = {
-    alumniId: payment.alumniId || null,
-    alumniName: payment.alumniName,
-    alumniEmail: payment.alumniEmail,
-    alumniWhatsapp: payment.alumniWhatsapp || null,
-    amount: payment.amount,
-    currency: payment.currency || 'USD',
-    methodId: payment.methodId || null,
-    methodName: payment.methodName,
-    methodType: payment.methodType,
-    status: payment.status || 'pending',
-    reference: payment.reference || null,
-    transactionId: payment.transactionId || null,
-    metadata: payment.metadata || {},
-    createdAt: nowIso(),
-    updatedAt: nowIso(),
-  };
-
-  if (isDemoMode) {
-    const entry = { id: 'local-' + Date.now(), ...payload };
-    const current = readDemoPayments();
-    writeDemoPayments([entry, ...current]);
-    return entry;
-  }
+  if (isDemoMode) return { ...payment, id: generateId('pay') };
 
   const client = getSupabase();
+  const payload = paymentToDb(payment, generateId('pay'));
   const { data, error } = await client.from('payments').insert([payload]).select();
   if (error) throw error;
-  return data?.[0] || null;
+  return data?.[0] ? paymentFromDb(data[0]) : null;
 };
 
 export const updatePaymentStatus = async (id, status, extra = {}) => {
-  const payload = { status, ...extra, updatedAt: nowIso() };
+  const payload = { status, updated_at: new Date().toISOString() };
+  if (extra.transactionId !== undefined) payload.transaction_id = extra.transactionId;
+  if (extra.reference !== undefined) payload.reference = extra.reference;
+  if (extra.metadata !== undefined) payload.metadata = extra.metadata;
 
-  if (isDemoMode) {
-    const current = readDemoPayments();
-    writeDemoPayments(current.map(item => item.id === id ? { ...item, ...payload } : item));
-    return { id, ...payload };
-  }
+  if (isDemoMode) return { id, ...payload };
 
   const client = getSupabase();
   const { data, error } = await client.from('payments').update(payload).eq('id', id).select();
   if (error) throw error;
-  return data?.[0] || null;
+  return data?.[0] ? paymentFromDb(data[0]) : { id, status };
 };
 
 export const deletePayment = async (id) => {
-  if (isDemoMode) {
-    const current = readDemoPayments();
-    writeDemoPayments(current.filter(item => item.id !== id));
-    return { id };
-  }
+  if (isDemoMode) return { id };
 
   const client = getSupabase();
   const { error } = await client.from('payments').delete().eq('id', id);
