@@ -1,5 +1,4 @@
 export const PAYMENT_METHOD_TYPES = [
-  { value: 'paypal', label: 'PayPal' },
   { value: 'clicknpay', label: 'ClickNPay Online' },
 ];
 
@@ -12,19 +11,6 @@ export const PAYMENT_STATUSES = [
 
 export const DEFAULT_PAYMENT_METHODS = [
   {
-    id: 'default-paypal',
-    name: 'PayPal',
-    type: 'paypal',
-    description: 'Pay securely with PayPal.',
-    config: {
-      paypalEmail: 'payments@schoolofhospitality.edu',
-      currency: 'USD',
-      instructions: 'Send payment to the PayPal email above and enter the transaction ID as your reference.',
-    },
-    isActive: true,
-    sortOrder: 1,
-  },
-  {
     id: 'default-clicknpay',
     name: 'ClickNPay Online',
     type: 'clicknpay',
@@ -35,7 +21,7 @@ export const DEFAULT_PAYMENT_METHODS = [
       instructions: 'Click submit to be redirected to ClickNPay secure payment page.',
     },
     isActive: true,
-    sortOrder: 2,
+    sortOrder: 1,
   },
 ];
 
