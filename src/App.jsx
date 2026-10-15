@@ -295,7 +295,7 @@ export default function App() {
 
       <footer className="bg-purple-950 border-t border-purple-900/60 py-4 px-4 text-center text-xs text-purple-400">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
-          <p>&copy; 2026 School of Hospitality and Tourism. All rights reserved.</p>
+          <p>&copy; 2026 School of Hospitality and Tourism Alumni. All rights reserved.</p>
           <div className="flex items-center gap-4 text-[11px]">
             <button onClick={() => setShowTermsModal(true)} className="hover:text-yellow-400 underline">Privacy Policy</button>
             <span>&bull;</span>

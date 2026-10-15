@@ -68,28 +68,13 @@ const PaymentMethodCard = ({ method, onEdit, onDelete, onToggleActive }) => {
           </>
         ) : null}
 
-        {method.type === 'ecocash' ? (
+        {method.type === 'clicknpay' ? (
           <>
-            <p><span className="text-slate-500">Merchant:</span> {method.config.merchantName}</p>
-            <p><span className="text-slate-500">Code:</span> {method.config.merchantCode}</p>
-            <p><span className="text-slate-500">Shortcode:</span> {method.config.shortcode}</p>
-          </>
-        ) : null}
-
-        {method.type === 'card' ? (
-          <>
-            <p><span className="text-slate-500">Gateway:</span> {method.config.gateway}</p>
-            <p><span className="text-slate-500">Currency:</span> {method.config.currency}</p>
-            <p><span className="text-slate-500">Mode:</span> {method.config.testMode ? 'Test / Sandbox' : 'Live'}</p>
-            <p className="text-slate-400 italic">{method.config.instructions}</p>
-          </>
-        ) : null}
-
-        {method.type === 'paypal' ? (
-          <>
-            <p><span className="text-slate-500">PayPal Email:</span> {method.config.paypalEmail}</p>
-            <p><span className="text-slate-500">Currency:</span> {method.config.currency}</p>
-            <p className="text-slate-400 italic">{method.config.instructions}</p>
+            <p><span className="text-slate-500">Merchant:</span> {method.config.merchantName || 'N/A'}</p>
+            <p><span className="text-slate-500">Currency:</span> {method.config.currency || 'USD'}</p>
+            {method.config.instructions && (
+              <p className="text-slate-400 italic">{method.config.instructions}</p>
+            )}
           </>
         ) : null}
       </div>

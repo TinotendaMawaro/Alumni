@@ -4,20 +4,16 @@ import PaymentMethodIcon from './PaymentMethodIcon';
 import { PAYMENT_METHOD_TYPES } from '../../data/paymentMethods';
 
 const EMPTY_CONFIG = {
-  bank_account: { bankName: '', accountName: '', accountNumber: '', branch: '', swiftCode: '', currency: 'USD' },
-  bank_transfer: { bankName: '', accountName: '', accountNumber: '', branch: '', swiftCode: '', referenceInstructions: '', currency: 'USD' },
-  ecocash: { merchantName: '', merchantCode: '', shortcode: '', currency: 'USD' },
-  card: { gateway: 'Stripe / Paystack', currency: 'USD', testMode: true, instructions: 'Card details are processed securely by the payment gateway and are not stored on this portal.' },
-  paypal: { paypalEmail: '', currency: 'USD', instructions: 'Send payment to the PayPal email above and enter the transaction ID as your reference.' },
+  clicknpay: { currency: 'USD', merchantName: '', instructions: '' },
 };
 
 const PaymentMethodForm = ({ method, onClose, onSave }) => {
   const isEditing = !!method?.id;
   const [form, setForm] = useState({
     name: '',
-    type: 'bank_account',
+    type: 'clicknpay',
     description: '',
-    config: EMPTY_CONFIG.bank_account,
+    config: EMPTY_CONFIG.clicknpay,
     isActive: true,
     sortOrder: 0,
   });
@@ -26,7 +22,7 @@ const PaymentMethodForm = ({ method, onClose, onSave }) => {
     if (method) {
       setForm({
         name: method.name || '',
-        type: method.type || 'bank_account',
+        type: method.type || 'clicknpay',
         description: method.description || '',
         config: method.config || EMPTY_CONFIG.bank_account,
         isActive: method.isActive ?? true,
@@ -58,42 +54,9 @@ const PaymentMethodForm = ({ method, onClose, onSave }) => {
   };
 
   const configFields = useMemo(() => {
-    if (form.type === 'bank_account' || form.type === 'bank_transfer') {
-      const fields = [
-        { key: 'bankName', label: 'Bank Name', type: 'text' },
-        { key: 'accountName', label: 'Account Name', type: 'text' },
-        { key: 'accountNumber', label: 'Account Number', type: 'text' },
-        { key: 'branch', label: 'Branch', type: 'text' },
-        { key: 'swiftCode', label: 'SWIFT Code', type: 'text' },
-        { key: 'currency', label: 'Currency', type: 'text' },
-      ];
-      if (form.type === 'bank_transfer') {
-        fields.push({ key: 'referenceInstructions', label: 'Reference Instructions', type: 'text' });
-      }
-      return fields;
-    }
-
-    if (form.type === 'ecocash') {
+    if (form.type === 'clicknpay') {
       return [
         { key: 'merchantName', label: 'Merchant Name', type: 'text' },
-        { key: 'merchantCode', label: 'Merchant Code', type: 'text' },
-        { key: 'shortcode', label: 'Shortcode', type: 'text' },
-        { key: 'currency', label: 'Currency', type: 'text' },
-      ];
-    }
-
-    if (form.type === 'card') {
-      return [
-        { key: 'gateway', label: 'Gateway Name', type: 'text' },
-        { key: 'currency', label: 'Currency', type: 'text' },
-        { key: 'testMode', label: 'Test Mode', type: 'checkbox' },
-        { key: 'instructions', label: 'Instructions', type: 'textarea' },
-      ];
-    }
-
-    if (form.type === 'paypal') {
-      return [
-        { key: 'paypalEmail', label: 'PayPal Email', type: 'email' },
         { key: 'currency', label: 'Currency', type: 'text' },
         { key: 'instructions', label: 'Instructions', type: 'textarea' },
       ];

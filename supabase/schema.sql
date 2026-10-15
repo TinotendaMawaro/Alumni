@@ -94,18 +94,16 @@ CREATE POLICY "Public can select payments" ON public.payments FOR SELECT USING (
 CREATE POLICY "Admin can manage payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);
 
 -- =====================================================================
--- Seed active payment methods: PayPal + ClickNPay only
+-- Seed active payment method: ClickNPay only
 -- Run this ONCE on a fresh database.
 -- =====================================================================
 INSERT INTO public.payment_methods (id, name, type, description, config, is_active, sort_order)
 VALUES
-  ('default-paypal', 'PayPal', 'paypal', 'Pay securely with PayPal.',
-   '{"paypalEmail":"payments@schoolofhospitality.edu","currency":"USD","instructions":"Send payment to the PayPal email above and enter the transaction ID as your reference."}', true, 5),
   ('default-clicknpay', 'ClickNPay Online', 'clicknpay', 'Pay securely online using ClickNPay. You will be redirected to complete your payment.',
-   '{"currency":"USD","merchantName":"School of Hospitality and Tourism","instructions":"Click submit to be redirected to the ClickNPay secure payment page."}', true, 6)
+   '{"currency":"USD","merchantName":"School of Hospitality and Tourism","instructions":"Click submit to be redirected to the ClickNPay secure payment page."}', true, 1)
 ON CONFLICT (id) DO NOTHING;
 
 -- Ensure legacy methods are hidden
 UPDATE public.payment_methods
 SET is_active = false
-WHERE id IN ('default-bank-account', 'default-bank-transfer', 'default-ecocash', 'default-card');
+WHERE id IN ('default-paypal', 'default-bank-account', 'default-bank-transfer', 'default-ecocash', 'default-card');

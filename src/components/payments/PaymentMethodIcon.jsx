@@ -1,20 +1,12 @@
-import { Building2, CreditCard, Wallet, Repeat, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { PAYMENT_METHOD_TYPE_LABELS } from '../../data/paymentMethods';
 
 const ICONS = {
-  bank_account: Building2,
-  bank_transfer: Repeat,
-  ecocash: Wallet,
-  card: CreditCard,
-  paypal: null,
   clicknpay: Globe,
 };
 
 const PaymentMethodIcon = ({ type, className = 'w-6 h-6' }) => {
-  if (type === 'paypal') {
-    return <span className={`${className} inline-flex items-center justify-center rounded-full border border-purple-700 bg-purple-900 text-[10px] font-black text-yellow-400`}>P</span>;
-  }
-  const Icon = ICONS[type] || Wallet;
+  const Icon = ICONS[type] || Globe;
   return <Icon className={className} />;
 };
 

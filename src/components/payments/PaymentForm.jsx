@@ -1,27 +1,17 @@
 import { useState, useMemo } from 'react';
-import { Send, Globe, ExternalLink } from 'lucide-react';
+import { ExternalLink, Lock } from 'lucide-react';
 import PaymentMethodIcon from './PaymentMethodIcon';
-import { PAYMENT_STATUS_LABELS } from '../../data/paymentMethods';
 
 const PaymentForm = ({ methods, onSubmit, addToast }) => {
-  const [selectedMethodId, setSelectedMethodId] = useState('');
+  const selectedMethod = useMemo(() => methods[0] || null, [methods]);
+
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USD');
   const [alumniName, setAlumniName] = useState('');
   const [alumniEmail, setAlumniEmail] = useState('');
   const [alumniWhatsapp, setAlumniWhatsapp] = useState('');
   const [reference, setReference] = useState('');
-  const [methodDetails, setMethodDetails] = useState({});
   const [submitting, setSubmitting] = useState(false);
-
-  const selectedMethod = useMemo(
-    () => methods.find(m => m.id === selectedMethodId) || null,
-    [methods, selectedMethodId]
-  );
-
-  const updateDetails = (key, value) => {
-    setMethodDetails(prev => ({ ...prev, [key]: value }));
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,32 +28,30 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
       alumniEmail: alumniEmail.trim(),
       alumniWhatsapp: alumniWhatsapp.trim() || null,
       reference: reference.trim() || null,
-      metadata: { methodDetails },
+      metadata: {},
       status: 'pending',
     };
 
     try {
       await onSubmit(payload);
-
       if (selectedMethod.type !== 'clicknpay') {
-        setSelectedMethodId('');
         setAmount('');
-        setCurrency('USD');
         setAlumniName('');
         setAlumniEmail('');
         setAlumniWhatsapp('');
         setReference('');
-        setMethodDetails({});
       }
     } catch (error) {
       console.error(error);
-      addToast?.('Payment initiation failed. Please try again.', 'error');
+      addToast?.('Payment could not be started. Please try again.', 'error');
     } finally {
       if (selectedMethod.type !== 'clicknpay') {
         setSubmitting(false);
       }
     }
   };
+
+  if (!selectedMethod) return null;
 
   return (
     <form onSubmit={handleSubmit} className="card p-6 rounded-2xl border border-slate-800 space-y-4">
@@ -128,107 +116,53 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
         </div>
       </div>
 
-      <div>
-        <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Payment Method *</label>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {methods.map(method => (
-            <button
-              key={method.id}
-              type="button"
-              onClick={() => setSelectedMethodId(method.id)}
-              className={`flex items-center gap-3 p-3 rounded-xl border text-left transition ${
-                selectedMethodId === method.id
-                  ? 'border-yellow-400 bg-yellow-400/10'
-                  : 'border-slate-800 bg-slate-950 hover:border-slate-700'
-              }`}
-            >
-              <PaymentMethodIcon type={method.type} className="w-5 h-5 text-yellow-400" />
-              <div>
-                <p className="text-xs font-bold text-white">{method.name}</p>
-                <p className="text-[11px] text-slate-400">{method.description}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {selectedMethod && (
-        <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-          <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">Method Details</p>
-
-          {selectedMethod.type === 'paypal' && (
-            <div className="space-y-2">
-              <p className="text-xs text-slate-300">{selectedMethod.config.instructions}</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">PayPal Email</label>
-                  <input
-                    type="email"
-                    value={methodDetails.paypalEmail || ''}
-                    onChange={e => updateDetails('paypalEmail', e.target.value)}
-                    placeholder={selectedMethod.config.paypalEmail}
-                    className="input-field"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-400 font-bold mb-1">Transaction ID</label>
-                  <input
-                    type="text"
-                    value={methodDetails.transactionId || ''}
-                    onChange={e => updateDetails('transactionId', e.target.value)}
-                    placeholder="PayPal transaction ID"
-                    className="input-field"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {selectedMethod.type === 'clicknpay' && (
-            <div className="space-y-1 text-xs text-slate-300">
-              <p className="text-yellow-300">{selectedMethod.config.instructions}</p>
-              <p><span className="text-slate-500">Merchant:</span> {selectedMethod.config.merchantName}</p>
-            </div>
-          )}
-
+      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+        <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">Secure Payment Gateway</p>
+        <div className="flex items-center gap-3">
+          <PaymentMethodIcon type={selectedMethod.type} className="w-6 h-6 text-yellow-400" />
           <div>
-            <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Payment Reference (optional)</label>
-            <input
-              type="text"
-              value={reference}
-              onChange={e => setReference(e.target.value)}
-              placeholder="e.g. Registration fee"
-              className="input-field"
-            />
+            <p className="text-sm font-bold text-white">{selectedMethod.name}</p>
+            <p className="text-[11px] text-slate-400">{selectedMethod.description}</p>
           </div>
         </div>
-      )}
+        {selectedMethod.config?.instructions && (
+          <p className="text-[11px] text-yellow-300">{selectedMethod.config.instructions}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Payment Reference (optional)</label>
+        <input
+          type="text"
+          value={reference}
+          onChange={e => setReference(e.target.value)}
+          placeholder="e.g. Registration fee"
+          className="input-field"
+        />
+      </div>
 
       <button
         type="submit"
-        disabled={!selectedMethod || !amount || Number(amount) <= 0 || submitting}
-        className="w-full py-3.5 bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-purple-950 font-black rounded-xl transition flex items-center justify-center gap-2 tracking-wider"
+        disabled={!amount || Number(amount) <= 0 || submitting}
+        className="w-full py-3.5 bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-purple-950 font-black rounded-xl transition flex items-center justify-center gap-2 tracking-wider disabled:opacity-50"
       >
         {submitting ? (
           <>
             <div className="w-4 h-4 border-2 border-purple-950 border-t-transparent rounded-full animate-spin" />
-            <span>
-              {selectedMethod?.type === 'clicknpay' ? 'Redirecting to ClickNPay...' : 'Processing...'}
-            </span>
+            <span>Redirecting to secure checkout...</span>
           </>
         ) : (
           <>
-            {selectedMethod?.type === 'clicknpay' ? (
-              <ExternalLink className="w-4 h-4" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-            <span>
-              {selectedMethod?.type === 'clicknpay' ? 'Pay with ClickNPay' : 'Submit Payment'}
-            </span>
+            <ExternalLink className="w-4 h-4" />
+            <span>Pay Now</span>
           </>
         )}
       </button>
+
+      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">
+        <Lock className="w-3 h-3" />
+        <span>Your information is protected by industry-standard encryption</span>
+      </div>
     </form>
   );
 };
