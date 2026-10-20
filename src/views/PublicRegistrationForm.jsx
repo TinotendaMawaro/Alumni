@@ -1,19 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Mail, Phone, Calendar, Briefcase, MapPin, ChevronDown } from 'lucide-react';
 import Logo from '../components/Logo';
 import { getYearOptions } from '../utils/formatters';
 
-const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplashMessage }) => {
-  const [form, setForm] = useState({
-    fullName: '',
-    email: '',
-    whatsapp: '',
-    program: '',
-    year: '',
-    employment: '',
-    location: '',
-    acceptedTerms: false
-  });
+const EMPTY_FORM = {
+  fullName: '',
+  email: '',
+  whatsapp: '',
+  program: '',
+  year: '',
+  employment: '',
+  location: '',
+  acceptedTerms: false
+};
+
+const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplashMessage, resetKey }) => {
+  const [form, setForm] = useState({ ...EMPTY_FORM });
+
+  // Clear every field once the parent confirms a successful registration.
+  useEffect(() => {
+    if (resetKey > 0) setForm({ ...EMPTY_FORM });
+  }, [resetKey]);
 
   const triggerSplashTransition = (message, callback) => {
     setSplashMessage(message);
@@ -50,10 +57,10 @@ const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplash
   };
 
   return (
-    <section className="flex-1 bg-gradient-to-b from-purple-950 via-purple-900 to-purple-950 py-8 md:py-12 px-4">
+    <section className="flex-1 py-8 md:py-12 px-4">
       <div className="max-w-2xl mx-auto">
         
-        <div className="bg-purple-900/80 backdrop-blur-xl rounded-3xl p-6 md:p-10 border border-purple-500/30 shadow-2xl relative overflow-hidden">
+        <div className="glass rounded-3xl p-6 md:p-10 border border-white/15 shadow-2xl relative overflow-hidden">
           
           <div className="absolute -top-20 -right-20 w-48 h-48 bg-yellow-400/20 rounded-full blur-3xl pointer-events-none"></div>
           <div className="absolute -bottom-20 -left-20 w-48 h-48 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
@@ -208,7 +215,7 @@ const PublicRegistrationForm = ({ onSubmit, showSplash, setShowSplash, setSplash
               </div>
             </div>
 
-            <div className="pt-2 bg-purple-950/60 p-3.5 rounded-2xl border border-purple-700/50">
+            <div className="pt-2 glass-panel p-3.5 rounded-2xl border border-white/10">
               <label className="flex items-start gap-3 cursor-pointer">
                 <input 
                   type="checkbox"

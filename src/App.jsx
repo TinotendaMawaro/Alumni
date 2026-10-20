@@ -1,23 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { isDemoMode } from './services/supabase';
-import { fetchAlumni, createAlumnus, updateAlumnus, deleteAlumnus } from './services/alumni';
+import { fetchAlumni, createAlumnus, updateAlumnus, deleteAlumnus, checkEmailExists } from './services/alumni';
 import { useAlumniData } from './hooks/useAlumniData';
 import { useAlumniFilters, useAlumniStats } from './hooks/useFilters';
 import { downloadCSV } from './utils/formatters';
 
 import SplashScreen from './components/SplashScreen';
 import Header from './components/Header';
-import AnimatedBackground from './components/AnimatedBackground';
+import ImageBackground from './components/ImageBackground';
 import ToastContainer from './components/ToastContainer';
 import ConfirmDialog from './components/ConfirmDialog';
 import ViewAlumnusModal from './components/ViewAlumnusModal';
 import EditAlumnusModal from './components/EditAlumnusModal';
 import TermsModal from './components/TermsModal';
+import FloatingActions from './components/FloatingActions';
 import PublicRegistrationForm from './views/PublicRegistrationForm';
 import AdminPortal from './views/AdminPortal';
 import AdminLogin from './views/AdminLogin';
 import PaymentsView from './views/PaymentsView';
-import PaymentAdminView from './views/PaymentAdminView';
 import PaymentReturnView from './views/PaymentReturnView';
 
 export default function App() {
@@ -35,6 +35,8 @@ export default function App() {
 
   const [activeView, setActiveView] = useState('public');
   const [isPaymentReturn, setIsPaymentReturn] = useState(false);
+  const [formResetKey, setFormResetKey] = useState(0);
+  const [lastRegisteredAlumnus, setLastRegisteredAlumnus] = useState(null);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -100,18 +102,32 @@ export default function App() {
     } else if (action.type === 'submit') {
       const record = action.data;
       try {
+        // Refuse duplicate registrations for the same email address.
+        const alreadyExists = await checkEmailExists(record.email);
+        if (alreadyExists) {
+          addToast(`This email address is already registered. Please sign in or contact support.`, 'error');
+          return;
+        }
+
         const saved = await createAlumnus(record);
         setAlumniList(prev => [saved, ...prev]);
-        
+
         const savedRecord = saved || record;
         try {
-          const { sendWelcomeEmail, sendAdminNotification } = await import('./services/email.js');
+          const { sendWelcomeEmail, sendMembershipInvitation, sendAdminNotification } = await import('./services/email.js');
           sendWelcomeEmail(savedRecord);
+          sendMembershipInvitation(savedRecord);
           sendAdminNotification(savedRecord, adminUser?.email || 'admin@sht.ac.zw');
         } catch {
           // email service optional
         }
+
         addToast(`Thank you ${savedRecord.fullName}! You have successfully registered.`, 'success');
+
+        // Clear the form and send the user to the membership payment page.
+        setLastRegisteredAlumnus(savedRecord);
+        setFormResetKey(k => k + 1);
+        setTimeout(() => handleSwitchView('payments'), 1500);
       } catch (err) {
         console.error("Submission error:", err);
         const detail = err?.message ? ` (${err.message})` : '';
@@ -214,10 +230,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-purple-950 text-slate-100 font-sans antialiased flex flex-col selection:bg-yellow-400 selection:text-purple-950">
+    <div className="min-h-screen text-slate-100 font-sans antialiased flex flex-col selection:bg-yellow-400 selection:text-purple-950">
       
       {showSplash && <SplashScreen message={splashMessage} />}
-      <AnimatedBackground />
+      <ImageBackground />
       <ToastContainer toasts={toasts} />
 
       <ConfirmDialog 
@@ -243,16 +259,17 @@ export default function App() {
         {isPaymentReturn && <PaymentReturnView addToast={addToast} />}
         
         {!isPaymentReturn && activeView === 'public' && (
-          <PublicRegistrationForm 
+          <PublicRegistrationForm
             onSubmit={handlePublicSubmit}
             showSplash={showSplash}
             setShowSplash={setShowSplash}
             setSplashMessage={setSplashMessage}
+            resetKey={formResetKey}
           />
         )}
 
         {!isPaymentReturn && activeView === 'payments' && (
-          <PaymentsView addToast={addToast} />
+          <PaymentsView addToast={addToast} registeredAlumnus={lastRegisteredAlumnus} />
         )}
 
         {!isPaymentReturn && activeView === 'admin' && (
@@ -268,6 +285,7 @@ export default function App() {
               onAddAlumnus={() => setEditingAlumnus({})}
               onViewAlumnus={(a) => setViewingAlumnus(a)}
               onExportCSV={handleExportCSV}
+              addToast={addToast}
             />
           )
         )}
@@ -289,11 +307,7 @@ export default function App() {
         onClose={() => setShowTermsModal(false)} 
       />
 
-      {adminUser && activeView === 'admin' && (
-        <PaymentAdminView addToast={addToast} />
-      )}
-
-      <footer className="bg-purple-950 border-t border-purple-900/60 py-4 px-4 text-center text-xs text-purple-400">
+      <footer className="bg-purple-950/70 border-t border-purple-900/60 py-4 px-4 text-center text-xs text-purple-400 backdrop-blur-lg">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
           <p>&copy; 2026 School of Hospitality and Tourism Alumni. All rights reserved.</p>
           <div className="flex items-center gap-4 text-[11px]">
@@ -305,6 +319,10 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {!isPaymentReturn && (
+        <FloatingActions onNavigate={(view) => handleSwitchView(view)} />
+      )}
 
     </div>
   );

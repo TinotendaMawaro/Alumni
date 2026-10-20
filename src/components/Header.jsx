@@ -24,7 +24,7 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-2 bg-purple-900/60 p-1.5 rounded-2xl border border-purple-800">
+        <div className="hidden md:flex items-center gap-2 glass p-1.5 rounded-2xl border border-white/15">
           <button
             onClick={() => onSwitchView('public')}
             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
@@ -78,7 +78,7 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
 
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2 text-purple-200 hover:text-white bg-purple-900/60 border border-purple-800 rounded-xl"
+          className="md:hidden p-2 text-purple-200 hover:text-white glass border border-white/15 rounded-xl"
         >
           {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
@@ -89,7 +89,7 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
           <button
             onClick={() => { onSwitchView('public'); setMobileMenuOpen(false); }}
             className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-between ${
-              activeView === 'public' ? 'bg-yellow-400 text-purple-950' : 'bg-purple-900/50 text-white'
+              activeView === 'public' ? 'bg-yellow-400 text-purple-950' : 'glass-panel text-white'
             }`}
           >
             <span className="flex items-center gap-2"><FileText className="w-4 h-4" /> Public Registration Form</span>
@@ -99,7 +99,7 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
           <button
             onClick={() => { onSwitchView('payments'); setMobileMenuOpen(false); }}
             className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-between ${
-              paymentsView ? 'bg-yellow-400 text-purple-950' : 'bg-purple-900/50 text-white'
+              paymentsView ? 'bg-yellow-400 text-purple-950' : 'glass-panel text-white'
             }`}
           >
             <span className="flex items-center gap-2"><Wallet className="w-4 h-4" /> Make a Payment</span>
@@ -109,7 +109,7 @@ const Header = ({ activeView, onSwitchView, alumniCount, adminUser, onLogout, mo
           <button
             onClick={() => { onSwitchView('admin'); setMobileMenuOpen(false); }}
             className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-between ${
-              activeView === 'admin' ? 'bg-yellow-400 text-purple-950' : 'bg-purple-900/50 text-white'
+              activeView === 'admin' ? 'bg-yellow-400 text-purple-950' : 'glass-panel text-white'
             }`}
           >
             <span className="flex items-center gap-2"><ShieldCheck className="w-4 h-4" /> Admin Portal</span>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Edit3, Trash2, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import PaymentMethodIcon from './PaymentMethodIcon';
-import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS } from '../../data/paymentMethods';
+import { PAYMENT_STATUSES, PAYMENT_STATUS_LABELS, PAYMENT_METHOD_TYPE_LABELS } from '../../data/paymentMethods';
 
 const PaymentMethodCard = ({ method, onEdit, onDelete, onToggleActive }) => {
   const statusColor = method.isActive

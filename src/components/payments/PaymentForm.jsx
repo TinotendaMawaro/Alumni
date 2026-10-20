@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ExternalLink, Lock } from 'lucide-react';
 import PaymentMethodIcon from './PaymentMethodIcon';
 
-const PaymentForm = ({ methods, onSubmit, addToast }) => {
+const PaymentForm = ({ methods, onSubmit, addToast, defaultAmount, prefill }) => {
   const selectedMethod = useMemo(() => methods[0] || null, [methods]);
+  const suggested = Number(defaultAmount) > 0 ? Number(defaultAmount) : 0;
 
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState('USD');
@@ -13,21 +14,39 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
   const [reference, setReference] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Prefill the suggested membership amount, but leave it fully editable.
+  useEffect(() => {
+    if (suggested > 0) setAmount(String(suggested.toFixed(2)));
+  }, [suggested]);
+
+  useEffect(() => {
+    if (!prefill) return;
+    if (prefill.alumniName) setAlumniName(prefill.alumniName);
+    if (prefill.alumniEmail) setAlumniEmail(prefill.alumniEmail);
+    if (prefill.alumniWhatsapp) setAlumniWhatsapp(prefill.alumniWhatsapp);
+  }, [prefill]);
+
+  const numericAmount = Number(amount);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedMethod || !amount || Number(amount) <= 0) return;
+    if (!selectedMethod) return;
+    if (!numericAmount || numericAmount <= 0) {
+      addToast?.('Please enter a valid amount.', 'error');
+      return;
+    }
 
     setSubmitting(true);
     const payload = {
       methodId: selectedMethod.id,
       methodName: selectedMethod.name,
       methodType: selectedMethod.type,
-      amount: Number(amount),
+      amount: numericAmount,
       currency,
       alumniName: alumniName.trim() || 'Guest',
       alumniEmail: alumniEmail.trim(),
       alumniWhatsapp: alumniWhatsapp.trim() || null,
-      reference: reference.trim() || null,
+      reference: reference.trim() || (suggested > 0 ? 'Monthly alumni membership' : null),
       metadata: {},
       status: 'pending',
     };
@@ -35,7 +54,6 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
     try {
       await onSubmit(payload);
       if (selectedMethod.type !== 'clicknpay') {
-        setAmount('');
         setAlumniName('');
         setAlumniEmail('');
         setAlumniWhatsapp('');
@@ -45,19 +63,17 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
       console.error(error);
       addToast?.('Payment could not be started. Please try again.', 'error');
     } finally {
-      if (selectedMethod.type !== 'clicknpay') {
-        setSubmitting(false);
-      }
+      if (selectedMethod.type !== 'clicknpay') setSubmitting(false);
     }
   };
 
   if (!selectedMethod) return null;
 
   return (
-    <form onSubmit={handleSubmit} className="card p-6 rounded-2xl border border-slate-800 space-y-4">
+    <form onSubmit={handleSubmit} className="glass p-6 rounded-2xl border border-white/15 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Full Name *</label>
+          <label className="block text-xs font-bold uppercase text-slate-200 mb-1">Full Name *</label>
           <input
             type="text"
             required
@@ -68,7 +84,7 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
           />
         </div>
         <div>
-          <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Email *</label>
+          <label className="block text-xs font-bold uppercase text-slate-200 mb-1">Email *</label>
           <input
             type="email"
             required
@@ -82,7 +98,7 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-xs font-bold uppercase text-slate-300 mb-1">WhatsApp Phone</label>
+          <label className="block text-xs font-bold uppercase text-slate-200 mb-1">WhatsApp Phone</label>
           <input
             type="tel"
             value={alumniWhatsapp}
@@ -91,8 +107,16 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
             className="input-field"
           />
         </div>
+
         <div>
-          <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Amount *</label>
+          <label className="block text-xs font-bold uppercase text-slate-200 mb-1">
+            {suggested > 0 ? 'Membership Fee (per month)' : 'Amount *'}
+            {suggested > 0 && (
+              <span className="ml-1.5 font-normal normal-case tracking-normal text-slate-400">
+                editable
+              </span>
+            )}
+          </label>
           <div className="relative">
             <input
               type="number"
@@ -101,7 +125,7 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
               step="0.01"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="0.00"
+              placeholder="5.00"
               className="input-field"
             />
             <select
@@ -116,34 +140,42 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
         </div>
       </div>
 
-      <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-        <p className="text-xs font-bold text-slate-300 uppercase tracking-wider">Secure Payment Gateway</p>
+      <div className="bg-slate-950/50 p-4 rounded-2xl border border-white/10 space-y-3">
+        <p className="text-xs font-bold text-slate-200 uppercase tracking-wider">Secure Payment Gateway</p>
         <div className="flex items-center gap-3">
           <PaymentMethodIcon type={selectedMethod.type} className="w-6 h-6 text-yellow-400" />
           <div>
             <p className="text-sm font-bold text-white">{selectedMethod.name}</p>
-            <p className="text-[11px] text-slate-400">{selectedMethod.description}</p>
+            <p className="text-[11px] text-slate-300">{selectedMethod.description}</p>
           </div>
         </div>
         {selectedMethod.config?.instructions && (
           <p className="text-[11px] text-yellow-300">{selectedMethod.config.instructions}</p>
         )}
+        {suggested > 0 && (
+          <p className="text-[11px] text-slate-300">
+            Suggested membership fee is <span className="font-bold text-yellow-400">$5.00 USD every month</span> —
+            you can pay a different amount if you wish.
+          </p>
+        )}
       </div>
 
       <div>
-        <label className="block text-xs font-bold uppercase text-slate-300 mb-1">Payment Reference (optional)</label>
+        <label className="block text-xs font-bold uppercase text-slate-200 mb-1">
+          Payment Reference {suggested > 0 ? '' : '(optional)'}
+        </label>
         <input
           type="text"
           value={reference}
           onChange={e => setReference(e.target.value)}
-          placeholder="e.g. Registration fee"
+          placeholder={suggested > 0 ? 'Monthly alumni membership' : 'e.g. Donation'}
           className="input-field"
         />
       </div>
 
       <button
         type="submit"
-        disabled={!amount || Number(amount) <= 0 || submitting}
+        disabled={submitting || !numericAmount || numericAmount <= 0}
         className="w-full py-3.5 bg-gradient-to-r from-yellow-400 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-purple-950 font-black rounded-xl transition flex items-center justify-center gap-2 tracking-wider disabled:opacity-50"
       >
         {submitting ? (
@@ -159,7 +191,7 @@ const PaymentForm = ({ methods, onSubmit, addToast }) => {
         )}
       </button>
 
-      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 pt-1">
+      <div className="flex items-center justify-center gap-2 text-[11px] text-slate-300 pt-1">
         <Lock className="w-3 h-3" />
         <span>Your information is protected by industry-standard encryption</span>
       </div>

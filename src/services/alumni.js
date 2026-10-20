@@ -45,6 +45,22 @@ export const createAlumnus = async (record) => {
   return data?.[0] ? alumniFromDb(data[0]) : null;
 };
 
+export const checkEmailExists = async (email) => {
+  if (!email) return false;
+
+  if (isDemoMode) return false;
+
+  const table = getAlumniTable();
+  const normalised = String(email).trim().toLowerCase();
+  const { data, error } = await table.select('id').ilike('email', normalised).limit(1);
+  if (error) {
+    // Never block registration on a lookup failure.
+    console.warn('Duplicate email check skipped:', error);
+    return false;
+  }
+  return Array.isArray(data) && data.length > 0;
+};
+
 export const updateAlumnus = async (id, changes) => {
   if (isDemoMode) {
     return { id, ...changes };

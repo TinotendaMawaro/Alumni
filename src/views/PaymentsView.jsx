@@ -1,25 +1,28 @@
 import { useState } from 'react';
-import { Wallet, Lock } from 'lucide-react';
+import { Wallet, Lock, PartyPopper } from 'lucide-react';
 import PaymentForm from '../components/payments/PaymentForm';
 import { usePaymentMethods } from '../hooks/usePayments';
 import { createPayment, updatePaymentStatus } from '../services/payments';
 import { createClickNPayOrder } from '../services/clicknpay';
+import { assignMembershipNumber } from '../services/membership';
 
-const PaymentsView = ({ addToast }) => {
+const MONTHLY_FEE = 5;
+
+const PaymentsView = ({ addToast, registeredAlumnus }) => {
   const { methods, loading } = usePaymentMethods();
+  const [issuedCard, setIssuedCard] = useState(null);
 
   const handleSubmit = async (payload) => {
     try {
       if (payload.methodType === 'clicknpay') {
         const clientReference = `CNP-${Date.now()}-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
 
-        // 1. Create the ClickNPay order first so we have a real reference.
         const order = await createClickNPayOrder({
           amount: payload.amount,
           currency: payload.currency,
           customerEmail: payload.alumniEmail,
           customerPhone: payload.alumniWhatsapp,
-          description: `Alumni Registration - ${payload.alumniName}`,
+          description: `Alumni Membership - ${payload.alumniName}`,
           clientReference,
         });
 
@@ -27,7 +30,6 @@ const PaymentsView = ({ addToast }) => {
           throw new Error('Payment gateway did not return a payment URL');
         }
 
-        // 2. Persist the pending payment against the database.
         const savedPayment = await createPayment({
           ...payload,
           reference: order.clientReference,
@@ -39,10 +41,17 @@ const PaymentsView = ({ addToast }) => {
           },
         });
 
-        // 3. Remember the reference in case the return URL omits it.
         localStorage.setItem('clicknpay_return_ref', order.clientReference);
+        // Stash the alumni details so the return page can issue a membership number.
+        localStorage.setItem(
+          'clicknpay_return_alumnus',
+          JSON.stringify({
+            fullName: payload.alumniName,
+            email: payload.alumniEmail,
+            whatsapp: payload.alumniWhatsapp,
+          })
+        );
 
-        // 4. Ensure the row is linked to the gateway order.
         if (savedPayment?.id) {
           await updatePaymentStatus(savedPayment.id, 'pending', {
             transactionId: order.transactionId || order.clientReference,
@@ -54,7 +63,6 @@ const PaymentsView = ({ addToast }) => {
           });
         }
 
-        // 5. Redirect to ClickNPay in the same tab.
         window.location.href = order.paymeUrl;
       } else {
         await createPayment(payload);
@@ -68,7 +76,7 @@ const PaymentsView = ({ addToast }) => {
 
   if (loading) {
     return (
-      <section className="flex-1 bg-slate-950 text-slate-100 py-8 px-4">
+      <section className="flex-1 text-slate-100 py-8 px-4">
         <div className="max-w-3xl mx-auto text-center text-xs text-slate-400">Loading payment methods...</div>
       </section>
     );
@@ -77,7 +85,7 @@ const PaymentsView = ({ addToast }) => {
   const activeMethods = methods.filter(m => m.isActive);
 
   return (
-    <section className="flex-1 bg-slate-950 text-slate-100 py-8 px-4">
+    <section className="flex-1 text-slate-100 py-8 px-4">
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="text-center">
           <div className="inline-flex items-center justify-center p-3 bg-white rounded-2xl shadow-xl mb-4 border-2 border-yellow-400">
@@ -86,12 +94,28 @@ const PaymentsView = ({ addToast }) => {
             </div>
           </div>
           <h2 className="text-3xl md:text-4xl font-black font-mono text-yellow-400 uppercase tracking-tight">
-            Make a Payment
+            Alumni Membership
           </h2>
-          <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-            Complete your payment securely through ClickNPay. You will be redirected to the payment gateway.
+          <p className="text-xs text-slate-300 mt-1 max-w-md mx-auto">
+            The suggested membership fee is <span className="font-bold text-yellow-400">$5 per month</span>, but you may pay any amount. Your membership number is issued immediately after payment.
           </p>
         </div>
+
+        {registeredAlumnus && !issuedCard && (
+          <div className="glass-strong p-4 flex items-start gap-3">
+            <span className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center flex-shrink-0">
+              <PartyPopper className="w-5 h-5" />
+            </span>
+            <div>
+              <p className="text-sm font-bold text-white">
+                Welcome to the alumni database, {registeredAlumnus.fullName}!
+              </p>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Please complete the suggested $5 monthly membership payment below to activate your membership and receive your membership number.
+              </p>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400">
           <Lock className="w-3 h-3" />
@@ -99,12 +123,22 @@ const PaymentsView = ({ addToast }) => {
         </div>
 
         {activeMethods.length === 0 ? (
-          <div className="card p-8 rounded-2xl border border-slate-800 text-center text-xs text-slate-400">
+          <div className="glass-strong p-8 rounded-2xl text-center text-xs text-slate-400">
             <Wallet className="w-8 h-8 mx-auto mb-2 text-slate-600" />
             No active payment methods configured. Please contact administration.
           </div>
         ) : (
-          <PaymentForm methods={activeMethods} onSubmit={handleSubmit} addToast={addToast} />
+          <PaymentForm
+            methods={activeMethods}
+            onSubmit={handleSubmit}
+            addToast={addToast}
+            defaultAmount={MONTHLY_FEE}
+            prefill={{
+              alumniName: registeredAlumnus?.fullName || '',
+              alumniEmail: registeredAlumnus?.email || '',
+              alumniWhatsapp: registeredAlumnus?.whatsapp || '',
+            }}
+          />
         )}
       </div>
     </section>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Wallet, FileText, Trash2, RefreshCw } from 'lucide-react';
 import PaymentMethodCard from '../components/payments/PaymentMethodCard';
 import PaymentMethodForm from '../components/payments/PaymentMethodForm';
@@ -15,7 +15,7 @@ import {
 } from '../services/payments';
 import { checkClickNPayOrderStatus } from '../services/clicknpay';
 
-const PaymentAdminView = ({ addToast }) => {
+const PaymentAdminView = ({ addToast, embedded = false }) => {
   const [methods, setMethods] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loadingMethods, setLoadingMethods] = useState(true);
@@ -52,6 +52,11 @@ const PaymentAdminView = ({ addToast }) => {
       setLoadingPayments(false);
     }
   };
+
+  useEffect(() => {
+    loadMethods();
+    loadPayments();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSaveMethod = async (method) => {
     try {
@@ -142,11 +147,11 @@ const PaymentAdminView = ({ addToast }) => {
   };
 
   return (
-    <section className="flex-1 bg-slate-950 text-slate-100 py-6 px-4 lg:px-8">
+    <section className={embedded ? 'text-slate-100' : 'flex-1 text-slate-100 py-6 px-4 lg:px-8'}>
       <div className="max-w-7xl mx-auto space-y-6">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass p-4">
           <div>
-            <h2 className="text-xl md:text-3xl font-black font-mono text-white">Payment Management</h2>
+            <h2 className="text-base font-black text-white">Payment Management</h2>
             <p className="text-xs text-slate-400 mt-1">Manage payment methods and review payment records.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 md:gap-3">
