@@ -27,7 +27,13 @@
   RewriteEngine On
   RewriteBase /
 
-  # Let existing files and directories be served directly.
+  # Never rewrite the build's static assets — serve them verbatim so the
+  # JS/CSS bundle can never be replaced by index.html (which would show a
+  # blank page with a MIME-type error in the console).
+  RewriteRule ^assets/ - [L]
+  RewriteRule \.(js|mjs|css|map|json|svg|ico|png|jpe?g|gif|webp|woff2?|ttf|eot)$ - [L]
+
+  # Let any other existing file or directory be served directly.
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]
