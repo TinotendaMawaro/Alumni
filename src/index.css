@@ -158,3 +158,80 @@
 @media (prefers-reduced-motion: reduce) {
   .bg-photo, .bg-wave, .bg-orb { animation: none !important; }
 }
+
+/* =====================================================================
+   Screenshot guard — admin portal privacy deterrents
+   ===================================================================== */
+#screenshot-guard-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0b0718;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+  pointer-events: none;
+}
+#screenshot-guard-overlay.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+#screenshot-guard-overlay .ssg-lock {
+  text-align: center;
+  color: #e2e8f0;
+  padding: 2rem;
+  max-width: 24rem;
+}
+#screenshot-guard-overlay .ssg-lock-icon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+#screenshot-guard-overlay .ssg-lock p {
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin: 0 0 0.35rem;
+}
+#screenshot-guard-overlay .ssg-lock span {
+  font-size: 0.8rem;
+  color: #94a3b8;
+}
+
+/* Discourage text selection / long-press copy while the guard is active */
+body.screenshot-guard-active {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+/* Keep form fields usable (admins must still type credentials/notes) */
+body.screenshot-guard-active input,
+body.screenshot-guard-active textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Blank the page for print / "Save as PDF" while the guard is active */
+@media print {
+  body.screenshot-guard-active * {
+    visibility: hidden !important;
+  }
+  body.screenshot-guard-active::after {
+    content: "Printing of the admin portal is disabled.";
+    visibility: visible;
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: #000;
+  }
+}

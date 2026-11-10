@@ -8,6 +8,7 @@ import PaymentAdminView from './PaymentAdminView';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import PieChart from '../components/admin/PieChart';
 import { useConnectionStatus } from '../hooks/useConnectionStatus';
+import { useScreenshotGuard } from '../hooks/useScreenshotGuard';
 import { fetchPayments } from '../services/payments';
 
 const STATUS_COLORS = { paid: '#34d399', pending: '#facc15', failed: '#fb7185', cancelled: '#94a3b8' };
@@ -67,6 +68,10 @@ const MonthlyBars = ({ rows }) => {
 
 const AdminPortal = ({ adminUser, alumniList, onLogout, onDeleteAlumnus, onEditAlumnus, onViewAlumnus, onExportCSV, onAddAlumnus, addToast }) => {
   const { connected, mode, lastChecked, check: checkConnection } = useConnectionStatus();
+
+  // Deter screen capture of confidential alumni & payment records.
+  useScreenshotGuard(true, addToast);
+
   const [section, setSection] = useState('overview');
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(true);

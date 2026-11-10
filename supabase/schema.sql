@@ -94,6 +94,36 @@ CREATE POLICY "Public can select payments" ON public.payments FOR SELECT USING (
 CREATE POLICY "Admin can manage payments" ON public.payments FOR ALL USING (true) WITH CHECK (true);
 
 -- =====================================================================
+-- Admin credentials
+-- ---------------------------------------------------------------------
+-- Stores the permanent password (salted SHA-256 hash) each committee
+-- admin sets on their first login. Only the six whitelisted committee
+-- role emails are ever written here by the application.
+--
+-- SECURITY NOTE: with the anon key the browser must read a row to verify
+-- a password, so hashes are readable by the client. For a hardened
+-- deployment move verification server-side (Supabase Auth / an edge
+-- function) and tighten the SELECT policy below.
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS public.admin_credentials (
+  email text PRIMARY KEY,
+  name text,
+  salt text NOT NULL,
+  password_hash text NOT NULL,
+  password_set boolean NOT NULL DEFAULT false,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.admin_credentials ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin credentials are readable" ON public.admin_credentials;
+DROP POLICY IF EXISTS "Admin credentials can be written" ON public.admin_credentials;
+
+CREATE POLICY "Admin credentials are readable" ON public.admin_credentials FOR SELECT USING (true);
+CREATE POLICY "Admin credentials can be written" ON public.admin_credentials FOR ALL USING (true) WITH CHECK (true);
+
+-- =====================================================================
 -- Seed active payment method: ClickNPay only
 -- Run this ONCE on a fresh database.
 -- =====================================================================
