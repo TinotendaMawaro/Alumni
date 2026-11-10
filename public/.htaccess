@@ -1,0 +1,57 @@
+# =====================================================================
+# SHT Alumni Portal — Apache / cPanel configuration
+# This file is copied into dist/ on every build and must sit next to
+# index.html in public_html.
+# =====================================================================
+
+# ---------------------------------------------------------------------
+# Correct MIME types. A blank screen on cPanel is most often caused by
+# Apache serving the ES-module bundle as text/plain, so the browser
+# refuses to execute it ("Expected a JavaScript module script...").
+# ---------------------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType application/javascript .js
+  AddType application/javascript .mjs
+  AddType text/css .css
+  AddType image/svg+xml .svg
+  AddType application/json .json
+  AddType image/x-icon .ico
+</IfModule>
+
+# ---------------------------------------------------------------------
+# Single Page Application routing: serve index.html for any path that is
+# not a real file or directory, so client-side routes (e.g.
+# /payment-return) and page refreshes work.
+# ---------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Let existing files and directories be served directly.
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # Everything else falls back to the SPA entry point.
+  RewriteRule . /index.html [L]
+</IfModule>
+
+# ---------------------------------------------------------------------
+# Caching: hashed assets are immutable; never cache index.html so new
+# deployments are picked up immediately.
+# ---------------------------------------------------------------------
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|mjs|css|woff2?|jpe?g|png|svg|webp)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "index\.html$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ---------------------------------------------------------------------
+# Gzip compression for text assets.
+# ---------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>
