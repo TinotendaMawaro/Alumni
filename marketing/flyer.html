@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SHT Alumni — Join Flyer</title>
+<style>
+  :root{
+    --purple:#2e1065; --purple2:#4c1d95; --gold:#facc15; --gold-soft:#fde68a;
+    --ink:#1e1b2e; --muted:#5b5570; --paper:#ffffff; --line:#ece9f5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#4b3f6b;font-family:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+  /* A4 portrait sheet */
+  .sheet{
+    width:210mm;min-height:297mm;margin:12px auto;background:var(--paper);
+    position:relative;overflow:hidden;display:flex;flex-direction:column;
+    box-shadow:0 18px 60px rgba(0,0,0,.35);
+  }
+
+  /* Header band */
+  .band{
+    background:linear-gradient(135deg,var(--purple2),var(--purple));
+    color:#fff;padding:26mm 18mm 20mm;position:relative;overflow:hidden;
+  }
+  .band::after{content:"";position:absolute;right:-60px;top:-60px;width:260px;height:260px;border-radius:50%;background:rgba(250,204,21,.16)}
+  .band::before{content:"";position:absolute;left:-50px;bottom:-80px;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.07)}
+  .brand{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+  .brand img{width:58px;height:58px;border-radius:14px;border:2px solid rgba(250,204,21,.6);object-fit:cover;background:#fff}
+  .brand .wordmark{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--gold-soft)}
+  .brand .wordmark b{display:block;color:#fff;font-size:15px;letter-spacing:.06em}
+
+  .hero{position:relative;z-index:1;margin-top:16mm}
+  .kicker{display:inline-block;background:var(--gold);color:var(--purple);font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding:6px 12px;border-radius:999px}
+  .hero h1{font-size:46px;line-height:1.04;font-weight:900;margin:12px 0 10px;letter-spacing:-.5px}
+  .hero h1 span{color:var(--gold)}
+  .hero p{font-size:16px;max-width:150mm;color:#e8e3f6;line-height:1.5}
+
+  /* Body */
+  .body{padding:14mm 18mm 10mm;display:flex;gap:14mm;flex:1}
+  .col-left{flex:1;min-width:0}
+  .col-right{width:70mm;flex-shrink:0}
+
+  .lead{font-size:15px;color:var(--muted);line-height:1.55;margin-bottom:10mm}
+
+  .benefits{list-style:none;display:grid;gap:11px}
+  .benefits li{display:flex;gap:12px;align-items:flex-start}
+  .benefits .ic{width:34px;height:34px;flex-shrink:0;border-radius:10px;background:rgba(46,16,101,.08);color:var(--purple);display:flex;align-items:center;justify-content:center}
+  .benefits .ic svg{width:19px;height:19px}
+  .benefits h3{font-size:15px;font-weight:800;color:var(--ink);line-height:1.2}
+  .benefits p{font-size:12.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+  /* QR card */
+  .qr-card{
+    border:2px solid var(--line);border-radius:18px;padding:18px;text-align:center;
+    background:linear-gradient(180deg,#fff, #faf8ff);box-shadow:0 10px 30px rgba(46,16,101,.08)
+  }
+  .qr-card .scan{font-size:13px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--purple)}
+  .qr-frame{margin:12px auto 10px;width:100%;max-width:56mm;aspect-ratio:1/1;position:relative;padding:10px;background:#fff;border-radius:14px;border:1px solid var(--line)}
+  .qr-svg{width:100%;height:100%;display:block}
+  .qr-frame .cap{position:absolute;inset:0;margin:auto;width:40px;height:40px;background:#fff;border-radius:10px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .qr-frame .cap svg{width:26px;height:26px}
+  .qr-url{font-size:13.5px;font-weight:800;color:var(--ink);word-break:break-all;margin-top:4px}
+  .qr-sub{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.4}
+  .steps{margin-top:12px;text-align:left;display:grid;gap:7px}
+  .steps div{display:flex;gap:9px;align-items:center;font-size:12px;color:var(--ink)}
+  .steps .n{width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+  /* Footer */
+  .foot{background:var(--purple);color:#efe9ff;padding:7mm 18mm;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px}
+  .foot .site{font-weight:800;color:var(--gold)}
+  .foot .dot{opacity:.4;margin:0 8px}
+
+  @page{size:A4;margin:0}
+  @media print{
+    html,body{background:#fff}
+    .sheet{margin:0;box-shadow:none;width:auto;min-height:auto}
+    .no-print{display:none!important}
+  }
+  .toolbar{max-width:210mm;margin:14px auto 0;text-align:center}
+  .toolbar button{background:var(--gold);color:var(--purple);border:none;font-weight:800;padding:10px 18px;border-radius:10px;cursor:pointer;font-size:14px}
+  .toolbar span{color:#e9e3ff;font-size:12px;margin-left:10px}
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div class="band">
+    <div class="brand">
+      <img src="data:image/jpeg;base64,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RM65O2a69sRPjpw17o83r/h3EMHxDjlPj+Eg7NCmG0depmb9TkkL9YzLq7/6lauITSAgICAgICAgICAgICAgICAgICAgICAgIIKnzChYz17AHFJBl6YNYGpJt3TVSMoxsRaO7ODkDs/m3TVurIMHEfJXF79matLa9lMMxx12uRnVaYB0bfE8zCxNu1Ho/XRYiRC/IfwvwrnzfmWvsM6w6V85Rce4+n4RlbqMofYv7nZYvSto0mNYb9tusuC8Xx2mt474eduS/AnyTj8rDFZwsmeCmby08hi3jaOUerbZY5XYoy1Zi82UKNlyc0Vnhb7HT3+Zo3E4r56RN8Nubh+by8uOk+HBuPDv6YuT5eQLPNroYrGvoZYjHlvsSN0fbNYdtB82Jg/SvWDY0pxnjLR1T5r3O6ia1/2sc91e2fTZ6E49x7i/EcRBiMPWgxmPi/hwi7DqT+JERPuMn83d9VNcwqh5PjZ7durXJ55qex5Ri9bbJGfQ93QdNRJn69NEFvh3JYuR4f8ANINh1JJpAqWYte3PED6NIDF6tNdR6+bat00WIE2sggICAgICAgICAgICAgICAgICAgICAg0zPcXzB/JHH+T4sInigq28flilJ2doJdskTgLN6naQPq3igishxnlw5SvdmyYQ4Gg0pHx6Ou1mO68kkkptJJKziG7cIA+npbVYGnD/ADFTwslrK8Splk2tdtpMTJPFC0bwPMzuNQ3OVik0rgTD0PqXRDRMx2rbcor4iTD5ynDNWaUia/dJ45HqvYfUg3QNEJj7d33bt79G08Qivzzk9ji7ZF+L5L8xG1Vjlx1q9dkEadmPue4Ed0TmUb+kx16eengmok5MVlpMtmsbWhpVcXNUEsFmK+s1+Cxoz9qQf+4Mt3qYz6bfJY1hnSUw2E+RY+G5gSCtfz1rGNSqvueFiMAkYX2nuZn1m1ciL1O3VmWeLDb+EYB+PcPw2DJ2c8dUhrm4+G8AZi08P1lkTaAgICAgICAgICAgICAgICAgICAgICAgICDGs42lZ/jx7+mniTf4Oyxozqx4OPYeCDsRV9sWrlt3m/V/u5apoc0qP5ZwfdaX23rbXR98n6z6v+snLBzSkY4Y4xYQHRmbRmWWFaAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICD/2f/gABJKRlhYAFdBAAAAAAAAAAAA" alt="SHT logo" />
+      <div class="wordmark">School of Hospitality &amp; Tourism<b>Alumni Association</b></div>
+    </div>
+    <div class="hero">
+      <span class="kicker">Calling all graduates</span>
+      <h1>Reconnect with your <span>Alumni</span> family.</h1>
+      <p>Join the official School of Hospitality &amp; Tourism Alumni network — grow your professional circle, access opportunities, and give back to the next generation.</p>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="col-left">
+      <p class="lead">Registration takes two minutes. Create your alumni profile, become a paid member, and stay connected to events, mentorship and career opportunities.</p>
+      <ul class="benefits">
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <div><h3>A lifelong network</h3><p>Connect with fellow graduates across hospitality and tourism worldwide.</p></div>
+        </li>
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></span>
+          <div><h3>Mentorship &amp; growth</h3><p>Share experience, find mentors, and support current students.</p></div>
+        </li>
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>
+          <div><h3>Events &amp; reunions</h3><p>Be first to hear about reunions, galas and professional meet-ups.</p></div>
+        </li>
+        <li>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+          <div><h3>Give back</h3><p>Your membership helps fund bursaries and student programmes.</p></div>
+        </li>
+      </ul>
+    </div>
+
+    <div class="col-right">
+      <div class="qr-card">
+        <div class="scan">Scan to join</div>
+        <div class="qr-frame">
+          <svg class="qr-svg" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 37 37" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h37v37H0z"/><path stroke="#2e1065" d="M2 2.5h7m1 0h3m3 0h1m2 0h1m3 0h1m1 0h2m1 0h7M2 3.5h1m5 0h1m1 0h1m2 0h1m2 0h1m1 0h4m1 0h1m2 0h1m1 0h1m5 0h1M2 4.5h1m1 0h3m1 0h1m1 0h2m1 0h2m1 0h3m4 0h4m1 0h1m1 0h3m1 0h1M2 5.5h1m1 0h3m1 0h1m3 0h1m1 0h2m4 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h1M2 6.5h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m2 0h2m7 0h1m1 0h3m1 0h1M2 7.5h1m5 0h1m1 0h3m11 0h3m1 0h1m5 0h1M2 8.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M10 9.5h1m3 0h1m2 0h1m2 0h1m2 0h1m1 0h1M4 10.5h3m1 0h1m1 0h1m2 0h1m1 0h1m1 0h1m2 0h1m3 0h6m2 0h3M2 11.5h3m1 0h2m4 0h2m5 0h10m2 0h1m2 0h1M3 12.5h3m2 0h1m2 0h1m2 0h1m1 0h1m1 0h2m3 0h1m3 0h3m1 0h3M2 13.5h3m1 0h2m9 0h1m2 0h2m1 0h3m1 0h2m2 0h4M2 14.5h1m1 0h3m1 0h3m1 0h1m1 0h5m1 0h4m1 0h3M2 15.5h1m1 0h1m4 0h2m6 0h2m2 0h1m2 0h2m1 0h3m1 0h1m2 0h1M4 16.5h3m1 0h1m4 0h2m1 0h2m2 0h3m1 0h1m2 0h2m2 0h1m1 0h1M2 17.5h1m2 0h1m1 0h1m4 0h1m1 0h1m1 0h2m1 0h2m2 0h3m2 0h2m2 0h3M4 18.5h1m3 0h2m1 0h4m1 0h2m1 0h1m2 0h1m2 0h1m1 0h1m1 0h2m1 0h1m1 0h1M3 19.5h1m1 0h1m4 0h2m1 0h2m1 0h2m2 0h1m1 0h1m2 0h2m1 0h2m4 0h1M2 20.5h2m4 0h1m3 0h2m3 0h8m2 0h2m3 0h1M2 21.5h1m1 0h1m1 0h1m5 0h1m1 0h5m1 0h1m2 0h1m1 0h2m1 0h7M2 22.5h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h1m1 0h6m2 0h1m2 0h5m1 0h1M2 23.5h3m1 0h1m7 0h2m6 0h1m1 0h1m1 0h1m5 0h1m1 0h1M2 24.5h1m1 0h1m3 0h3m2 0h2m1 0h2m1 0h1m1 0h1m7 0h1m1 0h1m1 0h1M2 25.5h1m2 0h1m1 0h1m1 0h4m1 0h1m2 0h1m1 0h1m1 0h1m1 0h1m2 0h1m2 0h5M2 26.5h1m1 0h1m1 0h1m1 0h1m4 0h1m1 0h2m2 0h1m2 0h1m1 0h1m1 0h5m2 0h1M10 27.5h2m1 0h3m2 0h1m1 0h1m1 0h1m1 0h1m1 0h1m3 0h2m1 0h2M2 28.5h7m2 0h1m2 0h2m1 0h3m1 0h2m1 0h3m1 0h1m1 0h1m2 0h1M2 29.5h1m5 0h1m3 0h1m2 0h4m1 0h1m4 0h2m3 0h5M2 30.5h1m1 0h3m1 0h1m1 0h5m1 0h1m1 0h1m3 0h3m1 0h5m2 0h2M2 31.5h1m1 0h3m1 0h1m1 0h1m3 0h1m2 0h1m2 0h1m4 0h1m1 0h1m2 0h2m1 0h1M2 32.5h1m1 0h3m1 0h1m1 0h1m2 0h1m1 0h1m5 0h1m2 0h1m1 0h3M2 33.5h1m5 0h1m8 0h8m2 0h1m1 0h1m1 0h1M2 34.5h7m2 0h1m1 0h2m1 0h1m1 0h1m2 0h2m1 0h3m5 0h2"/></svg>
+          <span class="cap">
+            <svg viewBox="0 0 64 64"><path d="M32 16 L54 26 L32 36 L10 26 Z" fill="#2e1065"/><path d="M20 31 L20 42 C20 46 26 49 32 49 C38 49 44 46 44 42 L44 31 L32 37 Z" fill="#4c1d95"/><circle cx="54" cy="40" r="3" fill="#facc15"/></svg>
+          </span>
+        </div>
+        <div class="qr-url">schotoalumni.co.zw</div>
+        <div class="qr-sub">Point your phone camera at the code, or visit the link.</div>
+        <div class="steps">
+          <div><span class="n">1</span> Scan the code or open the link</div>
+          <div><span class="n">2</span> Fill in your alumni details</div>
+          <div><span class="n">3</span> Complete membership &amp; you're in</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div><span class="site">schotoalumni.co.zw/</span><span class="dot">•</span>Register today</div>
+    <div>School of Hospitality &amp; Tourism Alumni Association</div>
+  </div>
+</div>
+
+<div class="toolbar no-print">
+  <button onclick="window.print()">Print / Save as PDF</button>
+  <span>Print at A4 — "Background graphics" ON for full colour.</span>
+</div>
+
+</body>
+</html>
