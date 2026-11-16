@@ -42,7 +42,7 @@ const MembershipCard = ({ card, onDone }) => {
     ctx.fillText(`Email: ${alumnus.email || 'N/A'}`, 28, 204);
     ctx.fillText(`Phone: ${alumnus.whatsapp || 'N/A'}`, 28, 228);
     ctx.fillText(`Issued: ${new Date().toLocaleDateString()}`, 28, 252);
-    ctx.fillText('Status: ACTIVE  |  $5.00 USD per month', 28, 276);
+    ctx.fillText('Status: ACTIVE  |  $2.00 USD per month', 28, 276);
 
     const link = document.createElement('a');
     link.download = `SHT-Membership-${card.membershipCode}.png`;

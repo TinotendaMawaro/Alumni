@@ -97,7 +97,7 @@ const PaymentsView = ({ addToast, registeredAlumnus }) => {
             Alumni Membership
           </h2>
           <p className="text-xs text-slate-300 mt-1 max-w-md mx-auto">
-            The suggested membership fee is <span className="font-bold text-yellow-400">$5 per month</span>, but you may pay any amount. Your membership number is issued immediately after payment.
+            The suggested membership fee is <span className="font-bold text-yellow-400">$2 per month</span>, but you may pay any amount. Your membership number is issued immediately after payment.
           </p>
         </div>
 

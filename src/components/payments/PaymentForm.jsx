@@ -125,7 +125,7 @@ const PaymentForm = ({ methods, onSubmit, addToast, defaultAmount, prefill }) =>
               step="0.01"
               value={amount}
               onChange={e => setAmount(e.target.value)}
-              placeholder="5.00"
+              placeholder="2.00"
               className="input-field"
             />
             <select
@@ -154,7 +154,7 @@ const PaymentForm = ({ methods, onSubmit, addToast, defaultAmount, prefill }) =>
         )}
         {suggested > 0 && (
           <p className="text-[11px] text-slate-300">
-            Suggested membership fee is <span className="font-bold text-yellow-400">$5.00 USD every month</span> —
+            Suggested membership fee is <span className="font-bold text-yellow-400">$2.00 USD every month</span> —
             you can pay a different amount if you wish.
           </p>
         )}
