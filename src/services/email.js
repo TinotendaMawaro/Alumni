@@ -61,15 +61,15 @@ export const sendWelcomeEmail = async (alumnus) => {
 export const sendMembershipInvitation = async (alumnus) => {
   return sendEmail({
     to: alumnus.email,
-    subject: 'Activate your SHT Alumni Membership - $5/month',
+    subject: 'Activate your SHT Alumni Membership - $2/month',
     templateParams: {
       name: alumnus.fullName,
       email: alumnus.email,
       program: alumnus.program,
       year: alumnus.year,
-      amount: '$5',
+      amount: '$2',
       paymentUrl: typeof window !== 'undefined' ? `${window.location.origin}/?view=payments` : '',
-      message: 'Your alumni registration was received. To activate your membership and receive your membership number, please complete the $5/month membership payment.',
+      message: 'Your alumni registration was received. To activate your membership and receive your membership number, please complete the $2/month membership payment.',
     },
   });
 };
@@ -84,7 +84,7 @@ export const sendMembershipCard = async (alumnus, membershipNumber) => {
       program: alumnus.program,
       year: alumnus.year,
       membershipNumber,
-      amount: '$5',
+      amount: '$2',
       message: `Thank you! Your membership payment was received. Your official membership number is ${membershipNumber}.`,
     },
   });

@@ -94,7 +94,7 @@ const MembershipCard = ({ card, onDone }) => {
             </span>
             <span className="text-[11px] font-bold text-emerald-300 flex items-center gap-1.5">
               <CreditCard className="w-3.5 h-3.5" />
-              ACTIVE &middot; $5/mo
+              ACTIVE &middot; $2/mo
             </span>
           </div>
         </div>

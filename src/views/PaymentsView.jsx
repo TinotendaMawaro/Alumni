@@ -6,7 +6,7 @@ import { createPayment, updatePaymentStatus } from '../services/payments';
 import { createClickNPayOrder } from '../services/clicknpay';
 import { assignMembershipNumber } from '../services/membership';
 
-const MONTHLY_FEE = 5;
+const MONTHLY_FEE = 2;
 
 const PaymentsView = ({ addToast, registeredAlumnus }) => {
   const { methods, loading } = usePaymentMethods();
@@ -111,7 +111,7 @@ const PaymentsView = ({ addToast, registeredAlumnus }) => {
                 Welcome to the alumni database, {registeredAlumnus.fullName}!
               </p>
               <p className="text-xs text-slate-300 mt-0.5">
-                Please complete the suggested $5 monthly membership payment below to activate your membership and receive your membership number.
+                Please complete the suggested $2 monthly membership payment below to activate your membership and receive your membership number.
               </p>
             </div>
           </div>
